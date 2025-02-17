@@ -16,7 +16,7 @@
 
 #define SPI_CLOCK 8000000  // 8MHz clock works.
 
-#define SS_PIN   15 // Slave select 
+#define SS_PIN   16 // Slave select 
 //#define INT_PIN  3  // Interrupt
 //#define LED      13 // not needed? 
 
@@ -73,21 +73,36 @@ void setup() {
 void loop() {
 	// various functions for reading
 	// mpu.read_mag();
-	// mpu.read_acc();
-	// mpu.read_gyro();
+	mpu.read_acc();
+	mpu.read_gyro();
+	//mpu.read_all();
 
-	mpu.read_all();
-
+/*
 	Serial.print(mpu.gyro_data[0]);   Serial.print('\t');
 	Serial.print(mpu.gyro_data[1]);   Serial.print('\t');
 	Serial.print(mpu.gyro_data[2]);   Serial.print('\t');
 	Serial.print(mpu.accel_data[0]);  Serial.print('\t');
 	Serial.print(mpu.accel_data[1]);  Serial.print('\t');
-	Serial.print(mpu.accel_data[2]);  Serial.print('\t');
-	Serial.print(mpu.mag_data[0]);    Serial.print('\t');
-	Serial.print(mpu.mag_data[1]);    Serial.print('\t');
-	Serial.print(mpu.mag_data[2]);    Serial.print('\t');
-	Serial.println(mpu.temperature);
+	Serial.print(mpu.accel_data[2]);  Serial.println('\t');
+	//Serial.print(mpu.mag_data[0]);    Serial.print('\t');
+	//Serial.print(mpu.mag_data[1]);    Serial.print('\t');
+	//Serial.print(mpu.mag_data[2]);    Serial.print('\t');
+	//Serial.println(mpu.temperature);
+*/
 
+	Serial.print(">gyrox:");
+	Serial.println(mpu.gyro_data[0]);
+	Serial.print(">gyroy:");
+	Serial.println(mpu.gyro_data[1]);
+	Serial.print(">gyroz:");
+	Serial.println(mpu.gyro_data[2]);
+
+	Serial.print(">accx:");
+	Serial.println(mpu.accel_data[0]);
+	Serial.print(">accy:");
+	Serial.println(mpu.accel_data[1]);
+	Serial.print(">accz:");
+	Serial.println(mpu.accel_data[2]);
+	
 	delay(10);
 }
