@@ -16,7 +16,7 @@
 
 #define SPI_CLOCK 8000000  // 8MHz clock works.
 
-#define SS_PIN   16 // Slave select 
+#define SS_PIN   5 // Slave select 
 //#define INT_PIN  3  // Interrupt
 //#define LED      13 // not needed? 
 
@@ -54,17 +54,7 @@ void setup() {
 		Serial.println(wai, HEX);
 	}
 
-	uint8_t wai_AK8963 = mpu.AK8963_whoami();
-	if (wai_AK8963 == 0x48){
-		Serial.println("Successful connection to mag");
-	}
-	else{
-		Serial.print("Failed connection to mag: ");
-		Serial.println(wai_AK8963, HEX);
-	}
-
 	mpu.calib_acc();
-	mpu.calib_mag();
 
 	Serial.println("Send any char to begin main loop.");
 	WAITFORINPUT();
@@ -77,6 +67,7 @@ void loop() {
 	mpu.read_gyro();
 	//mpu.read_all();
 
+
 /*
 	Serial.print(mpu.gyro_data[0]);   Serial.print('\t');
 	Serial.print(mpu.gyro_data[1]);   Serial.print('\t');
@@ -84,12 +75,10 @@ void loop() {
 	Serial.print(mpu.accel_data[0]);  Serial.print('\t');
 	Serial.print(mpu.accel_data[1]);  Serial.print('\t');
 	Serial.print(mpu.accel_data[2]);  Serial.println('\t');
-	//Serial.print(mpu.mag_data[0]);    Serial.print('\t');
-	//Serial.print(mpu.mag_data[1]);    Serial.print('\t');
-	//Serial.print(mpu.mag_data[2]);    Serial.print('\t');
 	//Serial.println(mpu.temperature);
 */
 
+	// send to serial plotter
 	Serial.print(">gyrox:");
 	Serial.println(mpu.gyro_data[0]);
 	Serial.print(">gyroy:");
@@ -103,6 +92,6 @@ void loop() {
 	Serial.println(mpu.accel_data[1]);
 	Serial.print(">accz:");
 	Serial.println(mpu.accel_data[2]);
-	
+
 	delay(10);
 }
