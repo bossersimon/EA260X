@@ -1,10 +1,5 @@
 /**
- * Sample program for the MPU9250 using SPI
- *
- * Sample rate of the AK8963 magnetometer is set at 100Hz. 
- * There are only two options: 8Hz or 100Hz so I've set it at 100Hz
- * in the library. This is set by writing to the CNTL1 register
- * during initialisation.
+ * Sample program for the MPU9250 using SPI (MODIFIED)
  *
  * Copyright (C) 2015 Brian Chen
  *
@@ -12,16 +7,18 @@
  */
 
 #include <SPI.h> // From the Arduino core
-#include "MPU9250.h" 
+#include "MPU9250.h"
+
+
+
 
 #define SPI_CLOCK 8000000  // 8MHz clock works.
 
-#define SS_PIN   5 // Slave select 
+#define SS_PIN   5 // Slave select
 //#define INT_PIN  3  // Interrupt
 //#define LED      13 // not needed? 
 
-
-// Replace with inline? 
+// Replace with inline?
 #define WAITFORINPUT(){            \
 	while(!Serial.available()){};  \
 	while(Serial.available()){     \
@@ -61,22 +58,10 @@ void setup() {
 }
 
 void loop() {
-	// various functions for reading
-	// mpu.read_mag();
+
 	mpu.read_acc();
 	mpu.read_gyro();
 	//mpu.read_all();
-
-
-/*
-	Serial.print(mpu.gyro_data[0]);   Serial.print('\t');
-	Serial.print(mpu.gyro_data[1]);   Serial.print('\t');
-	Serial.print(mpu.gyro_data[2]);   Serial.print('\t');
-	Serial.print(mpu.accel_data[0]);  Serial.print('\t');
-	Serial.print(mpu.accel_data[1]);  Serial.print('\t');
-	Serial.print(mpu.accel_data[2]);  Serial.println('\t');
-	//Serial.println(mpu.temperature);
-*/
 
 	// send to serial plotter
 	Serial.print(">gyrox:");
@@ -92,6 +77,8 @@ void loop() {
 	Serial.println(mpu.accel_data[1]);
 	Serial.print(">accz:");
 	Serial.println(mpu.accel_data[2]);
+
+
 
 	delay(10);
 }
