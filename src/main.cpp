@@ -82,30 +82,14 @@ void setup() {
   	pServer->getAdvertising()->start();
 
 	Serial.println("Characteristic defined!");
+
 }
 
 void loop() {
 
 	mpu.read_acc();
 	mpu.read_gyro();
-	//mpu.read_all();
-
-	// send to serial plotter
-	/*
-	Serial.print(">gyrox:");
-	Serial.println(mpu.gyro_data[0]);
-	Serial.print(">gyroy:");
-	Serial.println(mpu.gyro_data[1]);
-	Serial.print(">gyroz:");
-	Serial.println(mpu.gyro_data[2]);
-
-	Serial.print(">accx:");
-	Serial.println(mpu.accel_data[0]);
-	Serial.print(">accy:");
-	Serial.println(mpu.accel_data[1]);
-	Serial.print(">accz:");
-	Serial.println(mpu.accel_data[2]);
-	*/
+	//mpu.read_all(); // can also read temp
 
 	uint16_t gx = mpu.gyro_data[0];
 	uint16_t gy = mpu.gyro_data[1];
