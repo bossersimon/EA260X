@@ -68,18 +68,24 @@ void setup() {
 
 	BLEDevice::init("MyESP32");
   	BLEServer *pServer = BLEDevice::createServer();
-  	BLEService *pService = pServer->createService(SERVICE_UUID);
+  	
+	/*
+	BLEService *pService = pServer->createService(SERVICE_UUID);
 	pCharacteristic = pService->createCharacteristic(
     	CHARACTERISTIC_UUID,
    		// BLECharacteristic::PROPERTY_READ | 
    		// BLECharacteristic::PROPERTY_WRITE |
     	BLECharacteristic::PROPERTY_NOTIFY
   	);
+	*/
 
-	pCharacteristic->addDescriptor(new BLE2902());
-  	pCharacteristic->setValue("Blah");
-  	pService->start();
-  	pServer->getAdvertising()->start();
+	//pCharacteristic->addDescriptor(new BLE2902());
+  	//pCharacteristic->setValue("Blah");
+  	//pService->start();
+  	//pServer->getAdvertising()->start();
+	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+	pAdvertising->setScanResponse(true);
+	pAdvertising->start();
 
 	Serial.println("Characteristic defined!");
 
