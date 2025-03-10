@@ -45,8 +45,8 @@ void setup() {
 
 	SPI.begin();
 
-	Serial.println("Press any key to continue");
-	WAITFORINPUT();
+	//Serial.println("Press any key to continue");
+	//WAITFORINPUT();
 
 	mpu.init(true);
 
@@ -61,15 +61,14 @@ void setup() {
 
 	mpu.calib_acc();
 
-	Serial.println("Send any char to begin main loop.");
-	WAITFORINPUT();
+	//Serial.println("Send any char to begin main loop.");
+	//WAITFORINPUT();
 
 	/***************************************************/
 
 	BLEDevice::init("MyESP32");
   	BLEServer *pServer = BLEDevice::createServer();
   	
-	/*
 	BLEService *pService = pServer->createService(SERVICE_UUID);
 	pCharacteristic = pService->createCharacteristic(
     	CHARACTERISTIC_UUID,
@@ -77,15 +76,18 @@ void setup() {
    		// BLECharacteristic::PROPERTY_WRITE |
     	BLECharacteristic::PROPERTY_NOTIFY
   	);
-	*/
 
-	//pCharacteristic->addDescriptor(new BLE2902());
-  	//pCharacteristic->setValue("Blah");
-  	//pService->start();
-  	//pServer->getAdvertising()->start();
+	pCharacteristic->addDescriptor(new BLE2902());
 	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-	pAdvertising->setScanResponse(true);
-	pAdvertising->start();
+	pAdvertising->setScanResponse(false);
+	pAdvertising->setMinPreferred(0x06); // 10ms
+	pAdvertising->setMinPreferred(0x12); // 20ms
+	BLEDevice::startAdvertising();
+
+  	pCharacteristic->setValue("Blah");
+  	pService->start();
+  	//pServer->getAdvertising()->start();
+	//pAdvertising->start();
 
 	Serial.println("Characteristic defined!");
 
@@ -93,14 +95,20 @@ void setup() {
 
 void loop() {
 
+	// 16-bit ADC
 	mpu.read_acc();
 	mpu.read_gyro();
 	//mpu.read_all(); // can also read temp
 
-	uint16_t gx = mpu.gyro_data[0];
-	uint16_t gy = mpu.gyro_data[1];
-	uint16_t gz = mpu.gyro_data[2];
-	uint8_t data[6];
+	float ax = mpu.accel_data[0];
+	float ay = mpu.accel_data[1];
+	float az = mpu.accel_data[2];
+	float gx = mpu.accel_data[0];
+	float gy = mpu.accel_data[1];
+	float gz = mpu.accel_data[2];
+	
+	//float data[3] = {ax, ay, az};
+	float data[3] = {gx, gy, gz};
 
 	Serial.print(">gyrox:");
 	Serial.println(gx);
@@ -108,15 +116,17 @@ void loop() {
 	Serial.println(gy);
 	Serial.print(">gyroz:");
 	Serial.println(gz);
+	
+/*
+	Serial.print(">accx:");
+	Serial.println(ax);
+	Serial.print(">accy:");
+	Serial.println(ay);
+	Serial.print(">accz:");
+	Serial.println(az);
+*/
 
-	data[0] = gx & 0xFF;
-	data[1] = (gx >> 8) & 0xFF;
-	data[2] = gy & 0xFF;
-	data[3] = (gy >> 8) & 0xFF;
-	data[4] = gz & 0xFF;
-	data[5] = (gz >> 8) & 0xFF;
-
-	pCharacteristic->setValue(data, 6);
+	pCharacteristic->setValue((uint8_t*)data, sizeof(data));	
   	pCharacteristic->notify();  // Send notification to connected device
 
 	delay(10);
