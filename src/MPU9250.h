@@ -239,6 +239,7 @@ public:
     // ######## added
     void init_fifo();
     void read_fifo();
+    uint8_t fifo_data[12];
     // ##############
 
     float acc_divider;
