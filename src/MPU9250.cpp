@@ -259,6 +259,34 @@ void MPU9250::read_gyro()
 
 }
 
+// ##########################################
+    // Enables storing data to FIFO instead of reading sequentially
+void MPU9250::init_fifo(){
+    WriteReg(MPUREG_USER_CTRL, 0x04); // reset FIFO
+    delay(10);
+    WriteReg(MPUREG_USER_CTRL, 0x40); // enable FIFO
+    WriteReg(MPUREG_FIFO_EN, 0x78); // buffer gyro and acc data
+}
+
+// stores values in FIFO at correct sample rates
+void MPU9250::read_fifo(){
+    uint8_t fifo_data[12];
+    uint16_t fifo_count;
+
+    /* First check if data is available */
+    ReadRegs(MPUREG_FIFO_COUNTH, fifo_data, 2); // read FIFO sample count
+    fifo_count = ((uint16_t)fifo_data[0] << 8) | fifo_data[1];
+
+    if (fifo_count >= 12) {
+
+    }
+
+    ReadRegs(MPUREG_FIFO_R_W, fifo_data, 12);
+}
+
+// #####################################################
+
+
 
 /*                                 READ temperature
  * usage: call this function to read temperature data. 
@@ -450,7 +478,7 @@ void MPU9250::calibrate(float *dest1, float *dest2){
     delay(15);
   
     // Configure MPU6050 gyro and accelerometer for bias calculation
-    WriteReg(MPUREG_CONFIG, 0x01);      // Set low-pass filter to 188 Hz
+    WriteReg(MPUREG_CONFIG, 0x01);      // Set low-pass filter to 188 Hz 
     WriteReg(MPUREG_SMPLRT_DIV, 0x00);  // Set sample rate to 1 kHz
     WriteReg(MPUREG_GYRO_CONFIG, 0x00);  // Set gyro full-scale to 250 degrees per second, maximum sensitivity
     WriteReg(MPUREG_ACCEL_CONFIG, 0x00); // Set accelerometer full-scale to 2 g, maximum sensitivity
