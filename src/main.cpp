@@ -60,6 +60,9 @@ void setup() {
 	}
 
 	mpu.calib_acc();
+	//mpu.set_acc_scale();
+	//mpu.set_gyro_scale();
+
 
 	//Serial.println("Send any char to begin main loop.");
 	//WAITFORINPUT();
@@ -82,6 +85,9 @@ void setup() {
 	pAdvertising->setScanResponse(false);
 	pAdvertising->setMinPreferred(0x06); // 10ms
 	pAdvertising->setMinPreferred(0x12); // 20ms
+	//pAdvertising->setMinInterval(0x06);   // 10ms
+	//pAdvertising->setMaxInterval(0x12);   // 10ms
+	//BLEDevice::setMTU(517);
 	BLEDevice::startAdvertising();
 
   	pCharacteristic->setValue("Blah");
@@ -98,17 +104,21 @@ void loop() {
 	// 16-bit ADC
 	mpu.read_acc();
 	mpu.read_gyro();
-	//mpu.read_all(); // can also read temp
 
+	mpu.read_fifo();
+
+	/*
 	float ax = mpu.accel_data[0];
 	float ay = mpu.accel_data[1];
 	float az = mpu.accel_data[2];
 	float gx = mpu.accel_data[0];
 	float gy = mpu.accel_data[1];
 	float gz = mpu.accel_data[2];
+	*/
 	
 	//float data[3] = {ax, ay, az};
-	float data[3] = {gx, gy, gz};
+	//float data[3] = {gx, gy, gz};
+	//int16_t data[3] = { (int16_t)(gx*100),(int16_t)(gy*100),(int16_t)(gz*100) };
 
 	Serial.print(">gyrox:");
 	Serial.println(gx);
@@ -129,5 +139,5 @@ void loop() {
 	pCharacteristic->setValue((uint8_t*)data, sizeof(data));	
   	pCharacteristic->notify();  // Send notification to connected device
 
-	delay(10);
+	delay(2);
 }
