@@ -102,10 +102,8 @@ void setup() {
 void loop() {
 
 	// 16-bit ADC
-	mpu.read_acc();
-	mpu.read_gyro();
-
-	mpu.read_fifo();
+	//mpu.read_acc();
+	//mpu.read_gyro();
 
 	/*
 	float ax = mpu.accel_data[0];
@@ -115,18 +113,19 @@ void loop() {
 	float gy = mpu.accel_data[1];
 	float gz = mpu.accel_data[2];
 	*/
-	
+
 	//float data[3] = {ax, ay, az};
 	//float data[3] = {gx, gy, gz};
 	//int16_t data[3] = { (int16_t)(gx*100),(int16_t)(gy*100),(int16_t)(gz*100) };
-
+	
+	/*
 	Serial.print(">gyrox:");
 	Serial.println(gx);
 	Serial.print(">gyroy:");
 	Serial.println(gy);
 	Serial.print(">gyroz:");
 	Serial.println(gz);
-	
+	*/
 /*
 	Serial.print(">accx:");
 	Serial.println(ax);
@@ -136,7 +135,31 @@ void loop() {
 	Serial.println(az);
 */
 
-	pCharacteristic->setValue((uint8_t*)data, sizeof(data));	
+	mpu.read_fifo(); // updates fifo_data
+
+	// fifo_data stored as [ax,ay,az,gx,gy,gz]
+	if ( mpu.fifo_data ) {
+		int16_t bit_data;
+		float data;
+		for(int i = 0; i < 3; i++) {
+			bit_data = ((int16_t)mpu.fifo_data[i * 2] << 8) | mpu.fifo_data[i * 2 + 1];
+				data = (float)bit_data;
+				mpu.accel_data[i] = data / mpu.acc_divider - mpu.a_bias[i];
+
+				bit_data = ((int16_t)mpu.fifo_data[6 + i * 2] << 8) | mpu.fifo_data[6 + i * 2 + 1];
+				data = (float)bit_data;
+				mpu.gyro_data[i] = data / mpu.gyro_divider - mpu.g_bias[i];
+		}
+	}
+
+	Serial.print(">gyrox:");
+	Serial.println(mpu.gyro_data[0]);
+	Serial.print(">gyroy:");
+	Serial.println(mpu.gyro_data[1]);
+	Serial.print(">gyroz:");
+	Serial.println(mpu.gyro_data[2]);
+
+	pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
   	pCharacteristic->notify();  // Send notification to connected device
 
 	delay(2);
