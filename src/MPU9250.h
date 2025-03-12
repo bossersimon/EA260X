@@ -236,7 +236,11 @@ public:
     void read_all();
     void calibrate(float *dest1, float *dest2);
  
-    
+    // ######## added
+    void init_fifo();
+    void read_fifo();
+    // ##############
+
     float acc_divider;
     float gyro_divider;
     
