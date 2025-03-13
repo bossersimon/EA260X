@@ -18,6 +18,7 @@
 
 #define SERVICE_UUID        "9fc7cd06-b6aa-492d-9991-4d5a433023e5"
 #define CHARACTERISTIC_UUID "c1756f0e-07c7-49aa-bd64-8494be4f1a1c"
+#define BIAS_CHARACTERISTIC_UUID "97b28d55-f227-4568-885a-4db649a8e9fd"
 
 #define SPI_CLOCK 8000000  // 8MHz clock works.
 
@@ -35,8 +36,14 @@
 
 MPU9250 mpu(SPI_CLOCK, SS_PIN);
 BLECharacteristic *pCharacteristic;
+BLECharacteristic *pBiasCharacteristic;
 
-uint8_t data[12]; // TEST
+
+void testPrint();
+void floatConversion();
+void serialPlot();
+uint8_t bytearr[12];
+void printBiases();
 
 void setup() {
 	Serial.begin(115200);
@@ -82,6 +89,11 @@ void setup() {
    		// BLECharacteristic::PROPERTY_WRITE |
     	BLECharacteristic::PROPERTY_NOTIFY
   	);
+	
+	pBiasCharacteristic = pService->createCharacteristic(
+    	BIAS_CHARACTERISTIC_UUID,
+    	BLECharacteristic::PROPERTY_NOTIFY
+  	);
 
 	pCharacteristic->addDescriptor(new BLE2902());
 	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
@@ -100,55 +112,51 @@ void setup() {
 
 	Serial.println("Characteristic defined!");
 
-	
-	mpu.ReadRegs(MPUREG_FIFO_R_W, data, 12); // read FIFO once
-	for (int i = 0; i<12; i++) {
-		Serial.println(data[i]);
-	}
+	// For testing, expects FIFO setting
+	// testPrint();
 
+	delay(1000);
+	//printBiases();
 }
 
 void loop() {
 
-	// 16-bit ADC
 	//mpu.read_acc();
 	//mpu.read_gyro();
 
-	/*
-	float ax = mpu.accel_data[0];
-	float ay = mpu.accel_data[1];
-	float az = mpu.accel_data[2];
-	float gx = mpu.accel_data[0];
-	float gy = mpu.accel_data[1];
-	float gz = mpu.accel_data[2];
-	*/
-
-	//float data[3] = {ax, ay, az};
-	//float data[3] = {gx, gy, gz};
-	//int16_t data[3] = { (int16_t)(gx*100),(int16_t)(gy*100),(int16_t)(gz*100) };
-	
-	/*
-	Serial.print(">gyrox:");
-	Serial.println(gx);
-	Serial.print(">gyroy:");
-	Serial.println(gy);
-	Serial.print(">gyroz:");
-	Serial.println(gz);
-	*/
-/*
-	Serial.print(">accx:");
-	Serial.println(ax);
-	Serial.print(">accy:");
-	Serial.println(ay);
-	Serial.print(">accz:");
-	Serial.println(az);
-*/
-
 	mpu.read_fifo(); // updates fifo_data
+	// for testing
+	//floatConversion();
+	//serialPlot();
 
-//	 This is for converting and plotting to serial, for testing purposes
-/*
-	// fifo_data stored as [ax,ay,az,gx,gy,gz]
+	pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
+  	pCharacteristic->notify();  // Send notification to connected device
+
+	delay(10);
+}
+
+
+/* Prints one reading to be transmitted (for testing) */
+void testPrint() {
+	delay(1000);
+	mpu.ReadRegs(MPUREG_FIFO_R_W, bytearr, 12); // read FIFO once
+	for (int i = 0; i<12; i+=2) {
+		int16_t val = ((int16_t)bytearr[i] << 8 | bytearr[i+1]); // big endian
+		Serial.print(val);
+		Serial.print(", ");
+	}
+
+	while (true) {
+		pCharacteristic->setValue((uint8_t*)bytearr, sizeof(bytearr));	
+		pCharacteristic->notify();  // Send notification to connected device
+		delay(1000);
+	}
+}
+
+/*	 This is for converting coordinates to float values, for testing purposes */
+void floatConversion() {
+
+	// fifo data stored as [ax,ay,az,gx,gy,gz] big-endian format
 	if ( mpu.fifo_data ) {
 		int16_t bit_data;
 		float data;
@@ -162,20 +170,37 @@ void loop() {
 				mpu.gyro_data[i] = data / mpu.gyro_divider - mpu.g_bias[i];
 		}
 	}
+}
 
+
+/* Writes to serial plotter after converting to float values */
+void serialPlot() {
+	float ax = mpu.accel_data[0];
+	float ay = mpu.accel_data[1];
+	float az = mpu.accel_data[2];
+	float gx = mpu.gyro_data[0];
+	float gy = mpu.gyro_data[1];
+	float gz = mpu.gyro_data[2];
+		
 	Serial.print(">gyrox:");
-	Serial.println(mpu.gyro_data[0]);
+	Serial.println(gx);
 	Serial.print(">gyroy:");
-	Serial.println(mpu.gyro_data[1]);
+	Serial.println(gy);
 	Serial.print(">gyroz:");
-	Serial.println(mpu.gyro_data[2]);
+	Serial.println(gz);
 
-*/
-	//pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
-  	//pCharacteristic->notify();  // Send notification to connected device
+	Serial.print(">accx:");
+	Serial.println(ax);
+	Serial.print(">accy:");
+	Serial.println(ay);
+	Serial.print(">accz:");
+	Serial.println(az);
+}
 
+void printBiases() {
+	Serial.print("a_bias: "); Serial.print(mpu.a_bias[0]); Serial.print(" "); 
+	Serial.print(mpu.a_bias[1]); Serial.print(" "); Serial.println(mpu.a_bias[2]);
 
-	pCharacteristic->setValue((uint8_t*)data, sizeof(data));	
-	pCharacteristic->notify();  // Send notification to connected device
-	delay(10);
+	Serial.print("a_bias: "); Serial.print(mpu.g_bias[0]); Serial.print(" "); 
+	Serial.print(mpu.g_bias[1]); Serial.print(" "); Serial.println(mpu.g_bias[2]);
 }

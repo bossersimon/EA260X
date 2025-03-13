@@ -280,8 +280,7 @@ void MPU9250::read_fifo(){
     fifo_count = ((uint16_t)fifo_data[0] << 8) | fifo_data[1];
 
     while (fifo_count >= 12) {
-        ReadRegs(MPUREG_FIFO_R_W, fifo_data, 12);
-
+        ReadRegs(MPUREG_FIFO_R_W, fifo_data, 12); // read FIFO once
         /* Update count */
         ReadRegs(MPUREG_FIFO_COUNTH, fifo_data, 2); // read FIFO sample count
         fifo_count = ((uint16_t)fifo_data[0] << 8) | fifo_data[1] ;
