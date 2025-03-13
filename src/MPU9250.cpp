@@ -451,7 +451,7 @@ void MPU9250::read_all(){
     }
 }
 
-void MPU9250::calibrate(float *dest1, float *dest2){  
+void MPU9250::calibrate(float *dest1, float *dest2){  // dest 1 is g_bias, and dest2 is a_bias
     uint8_t data[12]; // data array to hold accelerometer and gyro x, y, z, data
     uint16_t ii, packet_count, fifo_count;
     int32_t gyro_bias[3]  = {0, 0, 0}, accel_bias[3] = {0, 0, 0};
