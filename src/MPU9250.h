@@ -254,6 +254,9 @@ public:
     float mag_data[3];
     int16_t mag_data_raw[3];    
 
+    float g_bias[3];
+    float a_bias[3];      // Bias corrections for gyro and accelerometer
+
 private:
     long my_clock;
     uint8_t my_cs;
@@ -262,8 +265,8 @@ private:
 
     //float randomstuffs[3];
 
-    float g_bias[3];
-    float a_bias[3];      // Bias corrections for gyro and accelerometer
+    //float g_bias[3];
+    //float a_bias[3];      // Bias corrections for gyro and accelerometer
 };
  
 #endif
