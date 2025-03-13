@@ -36,6 +36,8 @@
 MPU9250 mpu(SPI_CLOCK, SS_PIN);
 BLECharacteristic *pCharacteristic;
 
+uint8_t data[12]; // TEST
+
 void setup() {
 	Serial.begin(115200);
 
@@ -62,7 +64,6 @@ void setup() {
 	mpu.calib_acc();
 	//mpu.set_acc_scale();
 	//mpu.set_gyro_scale();
-
 	mpu.init_fifo(); // Enables buffering to FIFO
 
 
@@ -98,6 +99,12 @@ void setup() {
 	//pAdvertising->start();
 
 	Serial.println("Characteristic defined!");
+
+	
+	mpu.ReadRegs(MPUREG_FIFO_R_W, data, 12); // read FIFO once
+	for (int i = 0; i<12; i++) {
+		Serial.println(data[i]);
+	}
 
 }
 
@@ -139,6 +146,8 @@ void loop() {
 
 	mpu.read_fifo(); // updates fifo_data
 
+//	 This is for converting and plotting to serial, for testing purposes
+/*
 	// fifo_data stored as [ax,ay,az,gx,gy,gz]
 	if ( mpu.fifo_data ) {
 		int16_t bit_data;
@@ -161,8 +170,12 @@ void loop() {
 	Serial.print(">gyroz:");
 	Serial.println(mpu.gyro_data[2]);
 
-	pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
-  	pCharacteristic->notify();  // Send notification to connected device
+*/
+	//pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
+  	//pCharacteristic->notify();  // Send notification to connected device
 
-	delay(2);
+
+	pCharacteristic->setValue((uint8_t*)data, sizeof(data));	
+	pCharacteristic->notify();  // Send notification to connected device
+	delay(10);
 }
