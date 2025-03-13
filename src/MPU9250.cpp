@@ -268,7 +268,7 @@ void MPU9250::init_fifo(){
     WriteReg(MPUREG_FIFO_EN, 0x78); // buffer gyro and acc data
 }
 
-// stores values in FIFO at correct sample rates
+// stores values in FIFO at correct sample rate
 void MPU9250::read_fifo(){
     uint16_t fifo_count;
 
