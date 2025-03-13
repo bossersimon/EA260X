@@ -167,7 +167,6 @@ unsigned int MPU9250::set_acc_scale(int scale){
 }
 
 
-
 /*                                 GYROSCOPE SCALE
  * usage: call this function at startup, after initialization, to set the right range for the
  * gyroscopes. Suitable ranges are:
@@ -200,8 +199,6 @@ unsigned int MPU9250::set_gyro_scale(int scale){
     return temp_scale;
 }
 
-
-
 /*                                 WHO AM I?
  * usage: call this function to know if SPI is working correctly. It checks the I2C address of the
  * mpu9250 which should be 0x71
@@ -212,8 +209,6 @@ unsigned int MPU9250::whoami(){
     response = WriteReg(MPUREG_WHOAMI|READ_FLAG, 0x00);
     return response;
 }
-
-
 
 /*                                 READ ACCELEROMETER
  * usage: call this function to read accelerometer data. Axis represents selected axis:

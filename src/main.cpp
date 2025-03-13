@@ -89,13 +89,16 @@ void setup() {
    		// BLECharacteristic::PROPERTY_WRITE |
     	BLECharacteristic::PROPERTY_NOTIFY
   	);
-	
+
 	pBiasCharacteristic = pService->createCharacteristic(
     	BIAS_CHARACTERISTIC_UUID,
-    	BLECharacteristic::PROPERTY_NOTIFY
+    	BLECharacteristic::PROPERTY_NOTIFY |
+		BLECharacteristic::PROPERTY_READ
   	);
 
 	pCharacteristic->addDescriptor(new BLE2902());
+	pBiasCharacteristic->addDescriptor(new BLE2902());
+	
 	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
 	pAdvertising->setScanResponse(false);
 	pAdvertising->setMinPreferred(0x06); // 10ms
