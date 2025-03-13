@@ -44,22 +44,17 @@ void floatConversion();
 void serialPlot();
 uint8_t bytearr[12];
 void printBiases();
+void getBiases(uint8_t* arr);
 
 void setup() {
 	Serial.begin(115200);
 
-//	pinMode(INT_PIN, INPUT); // Interrupt 
-//	pinMode(LED, OUTPUT);
-//	digitalWrite(LED, HIGH);
-
 	SPI.begin();
-
-	//Serial.println("Press any key to continue");
-	//WAITFORINPUT();
+	delay(100);
 
 	mpu.init(true);
 
-	uint8_t wai = mpu.whoami();
+	uint8_t wai = mpu.whoami(); // doesn't work? 
 	if (wai == 0x71){
 		Serial.println("Successful connection");
 	}
@@ -69,24 +64,15 @@ void setup() {
 	}
 
 	mpu.calib_acc();
-	//mpu.set_acc_scale();
-	//mpu.set_gyro_scale();
 	mpu.init_fifo(); // Enables buffering to FIFO
 
-
-	//Serial.println("Send any char to begin main loop.");
-	//WAITFORINPUT();
-
-	/***************************************************/
-
+	
 	BLEDevice::init("MyESP32");
   	BLEServer *pServer = BLEDevice::createServer();
   	
 	BLEService *pService = pServer->createService(SERVICE_UUID);
 	pCharacteristic = pService->createCharacteristic(
     	CHARACTERISTIC_UUID,
-   		// BLECharacteristic::PROPERTY_READ | 
-   		// BLECharacteristic::PROPERTY_WRITE |
     	BLECharacteristic::PROPERTY_NOTIFY
   	);
 
@@ -110,33 +96,38 @@ void setup() {
 
   	pCharacteristic->setValue("Blah");
   	pService->start();
-  	//pServer->getAdvertising()->start();
-	//pAdvertising->start();
 
 	Serial.println("Characteristic defined!");
 
+	//mpu.set_acc_scale();
+	//mpu.set_gyro_scale();
+
+	// transmit the bias parameters (have to be converted to floats later)
+	uint8_t biases[12];
+	getBiases(biases);
+	pBiasCharacteristic->setValue(biases, sizeof(biases));
+	
+	printBiases();
 	// For testing, expects FIFO setting
 	// testPrint();
 
 	delay(1000);
-	//printBiases();
 }
 
 void loop() {
 
-	//mpu.read_acc();
-	//mpu.read_gyro();
-
 	mpu.read_fifo(); // updates fifo_data
-	// for testing
-	//floatConversion();
-	//serialPlot();
 
 	pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
   	pCharacteristic->notify();  // Send notification to connected device
+	delay(30);
 
-	delay(10);
+	// for testing
+	//floatConversion();
+	//serialPlot();
 }
+
+
 
 
 /* Prints one reading to be transmitted (for testing) */
@@ -204,6 +195,18 @@ void printBiases() {
 	Serial.print("a_bias: "); Serial.print(mpu.a_bias[0]); Serial.print(" "); 
 	Serial.print(mpu.a_bias[1]); Serial.print(" "); Serial.println(mpu.a_bias[2]);
 
-	Serial.print("a_bias: "); Serial.print(mpu.g_bias[0]); Serial.print(" "); 
+	Serial.print("g_bias: "); Serial.print(mpu.g_bias[0]); Serial.print(" "); 
 	Serial.print(mpu.g_bias[1]); Serial.print(" "); Serial.println(mpu.g_bias[2]);
+}
+
+void getBiases(uint8_t* empty_arr) {
+	int16_t ax_bias = (int16_t)(mpu.a_bias[0]*100);
+	int16_t ay_bias = (int16_t)(mpu.a_bias[1]*100);
+	int16_t az_bias = (int16_t)(mpu.a_bias[2]*100);
+	int16_t gx_bias = (int16_t)(mpu.g_bias[0]*100);
+	int16_t gy_bias = (int16_t)(mpu.g_bias[1]*100);
+	int16_t gz_bias = (int16_t)(mpu.g_bias[2]*100);
+
+	int16_t biases[6] = {ax_bias, ay_bias, az_bias, gx_bias, gy_bias, gz_bias};
+	memcpy(empty_arr, biases, sizeof(biases));
 }
