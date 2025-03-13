@@ -63,6 +63,8 @@ void setup() {
 	//mpu.set_acc_scale();
 	//mpu.set_gyro_scale();
 
+	mpu.init_fifo(); // Enables buffering to FIFO
+
 
 	//Serial.println("Send any char to begin main loop.");
 	//WAITFORINPUT();
