@@ -101,12 +101,18 @@ void setup() {
 	Serial.println("Characteristic defined!");
 
 	// get divider parameters from client
+	/*
 	uint8_t* scales = pParamsCharacteristic->getData();
 	int acc_scale = scales[0];
 	int gyro_scale = scales[1];
+	
+	Serial.println("Received scales!");
+	Serial.print("Acc_scale: "); Serial.println(acc_scale);
+	Serial.print("Gyro_scale: "); Serial.println(gyro_scale);
+	*/
 
-	mpu.set_acc_scale(acc_scale);
-	mpu.set_gyro_scale(gyro_scale);
+	mpu.set_acc_scale(BITS_FS_2G);
+	mpu.set_gyro_scale(BITS_FS_250DPS);
 
 	// transmit the bias and scale parameters (have to be converted to floats later)
 	uint8_t params[12];
