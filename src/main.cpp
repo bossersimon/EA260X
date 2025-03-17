@@ -43,8 +43,8 @@ void testPrint();
 void floatConversion();
 void serialPlot();
 uint8_t bytearr[12];
-void printBiases();
-void getBiases(uint8_t* arr);
+void printAdjustments();
+void getAdjustments(uint8_t* arr);
 
 void setup() {
 	Serial.begin(115200);
@@ -102,12 +102,12 @@ void setup() {
 	//mpu.set_acc_scale();
 	//mpu.set_gyro_scale();
 
-	// transmit the bias parameters (have to be converted to floats later)
-	uint8_t biases[12];
-	getBiases(biases);
-	pBiasCharacteristic->setValue(biases, sizeof(biases));
+	// transmit the bias and scale parameters (have to be converted to floats later)
+	uint8_t params[16];
+	getAdjustments(params);
+	pBiasCharacteristic->setValue(params, sizeof(params));
 	
-	printBiases();
+	printAdjustments();
 	// For testing, expects FIFO setting
 	// testPrint();
 
@@ -126,9 +126,6 @@ void loop() {
 	//floatConversion();
 	//serialPlot();
 }
-
-
-
 
 /* Prints one reading to be transmitted (for testing) */
 void testPrint() {
@@ -191,15 +188,18 @@ void serialPlot() {
 	Serial.println(az);
 }
 
-void printBiases() {
+void printAdjustments() {
 	Serial.print("a_bias: "); Serial.print(mpu.a_bias[0]); Serial.print(" "); 
 	Serial.print(mpu.a_bias[1]); Serial.print(" "); Serial.println(mpu.a_bias[2]);
 
 	Serial.print("g_bias: "); Serial.print(mpu.g_bias[0]); Serial.print(" "); 
 	Serial.print(mpu.g_bias[1]); Serial.print(" "); Serial.println(mpu.g_bias[2]);
+
+	Serial.print("acc_divider: "); Serial.println(mpu.acc_divider);
+	Serial.print("gyro_divider: "); Serial.println(mpu.gyro_divider);
 }
 
-void getBiases(uint8_t* empty_arr) {
+void getAdjustments(uint8_t* empty_arr) {
 	int16_t ax_bias = (int16_t)(mpu.a_bias[0]*100);
 	int16_t ay_bias = (int16_t)(mpu.a_bias[1]*100);
 	int16_t az_bias = (int16_t)(mpu.a_bias[2]*100);
@@ -207,6 +207,9 @@ void getBiases(uint8_t* empty_arr) {
 	int16_t gy_bias = (int16_t)(mpu.g_bias[1]*100);
 	int16_t gz_bias = (int16_t)(mpu.g_bias[2]*100);
 
-	int16_t biases[6] = {ax_bias, ay_bias, az_bias, gx_bias, gy_bias, gz_bias};
-	memcpy(empty_arr, biases, sizeof(biases));
+	int16_t gyro_div = (int16_t)(mpu.gyro_divider*100);
+	int16_t acc_div = mpu.acc_divider;
+
+	int16_t parameters[8] = {ax_bias, ay_bias, az_bias, gx_bias, gy_bias, gz_bias, acc_div, gyro_div};
+	memcpy(empty_arr, parameters, sizeof(parameters)); // little-endian
 }
