@@ -18,7 +18,7 @@
 
 #define SERVICE_UUID        "9fc7cd06-b6aa-492d-9991-4d5a433023e5"
 #define CHARACTERISTIC_UUID "c1756f0e-07c7-49aa-bd64-8494be4f1a1c"
-#define BIAS_CHARACTERISTIC_UUID "97b28d55-f227-4568-885a-4db649a8e9fd"
+#define PARAMS_CHARACTERISTIC_UUID "97b28d55-f227-4568-885a-4db649a8e9fd"
 
 #define SPI_CLOCK 8000000  // 8MHz clock works.
 
@@ -36,7 +36,7 @@
 
 MPU9250 mpu(SPI_CLOCK, SS_PIN);
 BLECharacteristic *pCharacteristic;
-BLECharacteristic *pBiasCharacteristic;
+BLECharacteristic *pParamsCharacteristic;
 
 
 void testPrint();
@@ -76,14 +76,15 @@ void setup() {
     	BLECharacteristic::PROPERTY_NOTIFY
   	);
 
-	pBiasCharacteristic = pService->createCharacteristic(
-    	BIAS_CHARACTERISTIC_UUID,
+	pParamsCharacteristic = pService->createCharacteristic(
+    	PARAMS_CHARACTERISTIC_UUID,
     	BLECharacteristic::PROPERTY_NOTIFY |
-		BLECharacteristic::PROPERTY_READ
+		BLECharacteristic::PROPERTY_READ |
+		BLECharacteristic::PROPERTY_WRITE
   	);
 
 	pCharacteristic->addDescriptor(new BLE2902());
-	pBiasCharacteristic->addDescriptor(new BLE2902());
+	pParamsCharacteristic->addDescriptor(new BLE2902());
 	
 	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
 	pAdvertising->setScanResponse(false);
@@ -99,13 +100,14 @@ void setup() {
 
 	Serial.println("Characteristic defined!");
 
+
 	//mpu.set_acc_scale();
 	//mpu.set_gyro_scale();
 
 	// transmit the bias and scale parameters (have to be converted to floats later)
 	uint8_t params[12];
 	getAdjustments(params);
-	pBiasCharacteristic->setValue(params, sizeof(params));
+	pParamsCharacteristic->setValue(params, sizeof(params));
 	
 	printAdjustments();
 	// For testing, expects FIFO setting
