@@ -65,7 +65,6 @@ void setup() {
 
 	mpu.calib_acc();
 	mpu.init_fifo(); // Enables buffering to FIFO
-
 	
 	BLEDevice::init("MyESP32");
   	BLEServer *pServer = BLEDevice::createServer();
@@ -119,7 +118,7 @@ void setup() {
 	getAdjustments(params);
 	pParamsCharacteristic->setValue(params, sizeof(params));
 	
-	printAdjustments();
+	//printAdjustments();
 	// For testing, expects FIFO setting
 	// testPrint();
 
@@ -129,13 +128,12 @@ void setup() {
 void loop() {
 
 	mpu.read_fifo(); // updates fifo_data
-
 	pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
   	pCharacteristic->notify();  // Send notification to connected device
 	delay(30);
 
 	// for testing
-	//floatConversion();
+ 	floatConversion();
 	//serialPlot();
 }
 
