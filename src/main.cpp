@@ -52,7 +52,7 @@ void setup() {
 	SPI.begin();
 	delay(100);
 
-	mpu.init(true);
+	mpu.init(true, true);
 
 	uint8_t wai = mpu.whoami(); // doesn't work? 
 	if (wai == 0x71){
@@ -64,6 +64,7 @@ void setup() {
 	}
 
 	mpu.calib_acc();
+	delay(100);
 	mpu.init_fifo(); // Enables buffering to FIFO
 	
 	BLEDevice::init("MyESP32");
@@ -100,6 +101,7 @@ void setup() {
 	Serial.println("Characteristic defined!");
 
 	// get divider parameters from client
+	
 	/*
 	uint8_t* scales = pParamsCharacteristic->getData();
 	int acc_scale = scales[0];
@@ -130,11 +132,12 @@ void loop() {
 	mpu.read_fifo(); // updates fifo_data
 	pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
   	pCharacteristic->notify();  // Send notification to connected device
-	delay(30);
-
+	//mpu.read_gyro();
 	// for testing
- 	floatConversion();
-	//serialPlot();
+
+// 	floatConversion();
+//	serialPlot();
+	delay(30);
 }
 
 /* Prints one reading to be transmitted (for testing) */
@@ -157,45 +160,42 @@ void testPrint() {
 /*	 This is for converting coordinates to float values, for testing purposes */
 void floatConversion() {
 
-	// fifo data stored as [ax,ay,az,gx,gy,gz] big-endian format
-	if ( mpu.fifo_data ) {
-		int16_t bit_data;
-		float data;
-		for(int i = 0; i < 3; i++) {
-			bit_data = ((int16_t)mpu.fifo_data[i * 2] << 8) | mpu.fifo_data[i * 2 + 1];
-				data = (float)bit_data;
-				mpu.accel_data[i] = data / mpu.acc_divider - mpu.a_bias[i];
+// fifo data stored as [ax,ay,az,gx,gy,gz]? big-endian format
 
-				bit_data = ((int16_t)mpu.fifo_data[6 + i * 2] << 8) | mpu.fifo_data[6 + i * 2 + 1];
-				data = (float)bit_data;
-				mpu.gyro_data[i] = data / mpu.gyro_divider - mpu.g_bias[i];
-		}
+	int16_t bit_data;
+	float data;
+	// For some reason the FIFO measurements are not aligned. The data is instead read as [az,gx,gy,gz,ax,ay]
+
+	for(int i = 0; i < 3; i++) {
+		bit_data = ((int16_t)mpu.fifo_data[i*2]<<8) | mpu.fifo_data[i*2+1];
+		data = (float)bit_data;
+		mpu.accel_data[i] = data/mpu.acc_divider - mpu.a_bias[i];
+
+		bit_data = ((int16_t)mpu.fifo_data[6+i*2]<<8) | mpu.fifo_data[6+i*2+1];
+		data = (float)bit_data;
+		mpu.gyro_data[i] = data/mpu.gyro_divider - mpu.g_bias[i];
 	}
+
+	
 }
 
 
-/* Writes to serial plotter after converting to float values */
-void serialPlot() {
-	float ax = mpu.accel_data[0];
-	float ay = mpu.accel_data[1];
-	float az = mpu.accel_data[2];
-	float gx = mpu.gyro_data[0];
-	float gy = mpu.gyro_data[1];
-	float gz = mpu.gyro_data[2];
-		
-	Serial.print(">gyrox:");
-	Serial.println(gx);
-	Serial.print(">gyroy:");
-	Serial.println(gy);
-	Serial.print(">gyroz:");
-	Serial.println(gz);
 
+/* Writes to serial plotter after converting to float values */
+void serialPlot() {		
 	Serial.print(">accx:");
-	Serial.println(ax);
+	Serial.println(mpu.accel_data[0]);
 	Serial.print(">accy:");
-	Serial.println(ay);
+	Serial.println(mpu.accel_data[1]);
 	Serial.print(">accz:");
-	Serial.println(az);
+	Serial.println(mpu.accel_data[2]);
+
+	Serial.print(">gyrox:");
+	Serial.println(mpu.gyro_data[0]);
+	Serial.print(">gyroy:");
+	Serial.println(mpu.gyro_data[1]);
+	Serial.print(">gyroz:");
+	Serial.println(mpu.gyro_data[2]);
 }
 
 void printAdjustments() {

@@ -259,10 +259,11 @@ void MPU9250::read_gyro()
 void MPU9250::init_fifo(){
     uint8_t user_ctrl;
     ReadReg(MPUREG_USER_CTRL, user_ctrl); // Read current settings
+    WriteReg(MPUREG_USER_CTRL, 0x00);
     WriteReg(MPUREG_USER_CTRL, 0x04); // reset FIFO
-    delay(100);
-    //WriteReg(MPUREG_USER_CTRL, 0x40); // enable FIFO
-    WriteReg(MPUREG_USER_CTRL, user_ctrl | 0x40); // Doesn't erase previous bits
+    delay(10);
+    WriteReg(MPUREG_USER_CTRL, 0x40); // enable FIFO
+    //WriteReg(MPUREG_USER_CTRL, user_ctrl | 0x40); // Doesn't erase previous bits
     WriteReg(MPUREG_FIFO_EN, 0x78); // buffer gyro and acc data
 }
 
