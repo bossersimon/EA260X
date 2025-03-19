@@ -130,13 +130,19 @@ void setup() {
 void loop() {
 
 	mpu.read_fifo(); // updates fifo_data
-	pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
+	memcpy(mpu.fifo_data_12, &mpu.fifo_data_14[2], 12);
+	//mpu.ReadRegs(MPUREG_ACCEL_XOUT_H, mpu.combined_data, 6);
+	//mpu.ReadRegs(MPUREG_GYRO_XOUT_H, mpu.combined_data +6, 6);
+
+	pCharacteristic->setValue((uint8_t*)mpu.fifo_data_12, sizeof(mpu.fifo_data_12));
+
+	//pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
   	pCharacteristic->notify();  // Send notification to connected device
 	//mpu.read_gyro();
 	// for testing
 
-// 	floatConversion();
-//	serialPlot();
+ 	floatConversion();
+	serialPlot();
 	delay(30);
 }
 
@@ -167,18 +173,15 @@ void floatConversion() {
 	// For some reason the FIFO measurements are not aligned. The data is instead read as [az,gx,gy,gz,ax,ay]
 
 	for(int i = 0; i < 3; i++) {
-		bit_data = ((int16_t)mpu.fifo_data[i*2]<<8) | mpu.fifo_data[i*2+1];
-		data = (float)bit_data;
-		mpu.accel_data[i] = data/mpu.acc_divider - mpu.a_bias[i];
-
-		bit_data = ((int16_t)mpu.fifo_data[6+i*2]<<8) | mpu.fifo_data[6+i*2+1];
+		bit_data = ((int16_t)mpu.fifo_data_12[i*2]<<8) | mpu.fifo_data_12[i*2+1];
 		data = (float)bit_data;
 		mpu.gyro_data[i] = data/mpu.gyro_divider - mpu.g_bias[i];
-	}
 
-	
+		bit_data = ((int16_t)mpu.fifo_data_12[6+i*2]<<8) | mpu.fifo_data_12[6+i*2+1];
+		data = (float)bit_data;
+		mpu.accel_data[i] = data/mpu.acc_divider - mpu.a_bias[i];
+	}	
 }
-
 
 
 /* Writes to serial plotter after converting to float values */
@@ -220,6 +223,6 @@ void getAdjustments(uint8_t* empty_arr) {
 	//int16_t gyro_div = (int16_t)(mpu.gyro_divider*100);
 	//int16_t acc_div = mpu.acc_divider*100;
 
-	int16_t parameters[6] = {ax_bias, ay_bias, az_bias, gx_bias, gy_bias, gz_bias};
+	int16_t parameters[6] = {gx_bias, gy_bias, gz_bias, ax_bias, ay_bias, az_bias};
 	memcpy(empty_arr, parameters, sizeof(parameters)); // little-endian
 }

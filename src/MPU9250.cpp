@@ -259,12 +259,13 @@ void MPU9250::read_gyro()
 void MPU9250::init_fifo(){
     uint8_t user_ctrl;
     ReadReg(MPUREG_USER_CTRL, user_ctrl); // Read current settings
-    WriteReg(MPUREG_USER_CTRL, 0x00);
+    WriteReg(MPUREG_USER_CTRL, 0x00); // Disable FIFO
     WriteReg(MPUREG_USER_CTRL, 0x04); // reset FIFO
+   // WriteReg(MPUREG_CONFIG, 0x41);      // Set low-pass filter to 188 Hz, FIFO_MODE =1
     delay(10);
     WriteReg(MPUREG_USER_CTRL, 0x40); // enable FIFO
     //WriteReg(MPUREG_USER_CTRL, user_ctrl | 0x40); // Doesn't erase previous bits
-    WriteReg(MPUREG_FIFO_EN, 0x78); // buffer gyro and acc data
+    WriteReg(MPUREG_FIFO_EN, 0xF8); // buffer gyro and acc data
 }
 
 // stores values in FIFO at correct sample rate
@@ -276,8 +277,8 @@ void MPU9250::read_fifo(){
     ReadRegs(MPUREG_FIFO_COUNTH, count_data, 2); // read FIFO sample count
     fifo_count = ((uint16_t)count_data[0] << 8) | count_data[1];
 
-    while (fifo_count >= 12) {
-        ReadRegs(MPUREG_FIFO_R_W, fifo_data, 12); // read FIFO once
+    while (fifo_count >= 14) {
+        ReadRegs(MPUREG_FIFO_R_W, fifo_data_14, 14); // read FIFO once
         /* Update count */
         ReadRegs(MPUREG_FIFO_COUNTH, count_data, 2); // read FIFO sample count
         fifo_count = ((uint16_t)count_data[0] << 8) | count_data[1] ;

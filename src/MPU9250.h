@@ -239,7 +239,8 @@ public:
     // ######## added
     void init_fifo();
     void read_fifo();
-    uint8_t fifo_data[12];
+    uint8_t fifo_data_14[14];
+    uint8_t fifo_data_12[12];
     // ##############
 
     float acc_divider;
@@ -252,7 +253,10 @@ public:
     float temperature;
     float gyro_data[3];
     float mag_data[3];
-    int16_t mag_data_raw[3];    
+    int16_t mag_data_raw[3];
+   // uint8_t accel_data[6];
+   // uint8_t gyro_data[6];
+    uint8_t combined_data[12];
 
     float g_bias[3];
     float a_bias[3];      // Bias corrections for gyro and accelerometer
