@@ -241,6 +241,9 @@ public:
     void read_fifo();
     uint8_t fifo_data_14[14];
     uint8_t fifo_data_12[12];
+    uint8_t data_buffer[512];
+    uint8_t sliced_buffer[384];
+    uint16_t bufferlength;
     // ##############
 
     float acc_divider;

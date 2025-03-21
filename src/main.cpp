@@ -16,6 +16,8 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 
+#include <ESP32Servo.h>
+
 #define SERVICE_UUID        "9fc7cd06-b6aa-492d-9991-4d5a433023e5"
 #define CHARACTERISTIC_UUID "c1756f0e-07c7-49aa-bd64-8494be4f1a1c"
 #define PARAMS_CHARACTERISTIC_UUID "97b28d55-f227-4568-885a-4db649a8e9fd"
@@ -46,9 +48,9 @@ uint8_t bytearr[12];
 void printAdjustments();
 void getAdjustments(uint8_t* arr);
 
+
 void setup() {
 	Serial.begin(115200);
-
 	SPI.begin();
 	delay(100);
 
@@ -130,19 +132,16 @@ void setup() {
 void loop() {
 
 	mpu.read_fifo(); // updates fifo_data
-	memcpy(mpu.fifo_data_12, &mpu.fifo_data_14[2], 12);
-	//mpu.ReadRegs(MPUREG_ACCEL_XOUT_H, mpu.combined_data, 6);
-	//mpu.ReadRegs(MPUREG_GYRO_XOUT_H, mpu.combined_data +6, 6);
+	//memcpy(mpu.fifo_data_12, &mpu.fifo_data_14[2], 12);
 
-	pCharacteristic->setValue((uint8_t*)mpu.fifo_data_12, sizeof(mpu.fifo_data_12));
-
-	//pCharacteristic->setValue((uint8_t*)mpu.fifo_data, sizeof(mpu.fifo_data));	
+	//pCharacteristic->setValue((uint8_t*)mpu.fifo_data_12, sizeof(mpu.fifo_data_12));
+	pCharacteristic->setValue((uint8_t*)mpu.sliced_buffer, mpu.bufferlength);
+	
   	pCharacteristic->notify();  // Send notification to connected device
-	//mpu.read_gyro();
+	
 	// for testing
-
- 	floatConversion();
-	serialPlot();
+ 	//floatConversion();
+	//serialPlot();
 	delay(30);
 }
 

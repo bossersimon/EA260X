@@ -263,9 +263,12 @@ void MPU9250::init_fifo(){
     WriteReg(MPUREG_USER_CTRL, 0x04); // reset FIFO
    // WriteReg(MPUREG_CONFIG, 0x41);      // Set low-pass filter to 188 Hz, FIFO_MODE =1
     delay(10);
-    WriteReg(MPUREG_USER_CTRL, 0x40); // enable FIFO
+    WriteReg(MPUREG_USER_CTRL, 0x40|0x20 ); // enable FIFO
     //WriteReg(MPUREG_USER_CTRL, user_ctrl | 0x40); // Doesn't erase previous bits
-    WriteReg(MPUREG_FIFO_EN, 0xF8); // buffer gyro and acc data
+    WriteReg(MPUREG_FIFO_EN, 0xF9); // buffer gyro and acc data, temp data and SLV2 data
+
+    WriteReg(MPUREG_I2C_SLV0_CTRL, 0x82); // Enables SLV0, and configures reading 2 bytes 
+                                          // (only used to add extra bytes to buffer)
 }
 
 // stores values in FIFO at correct sample rate
