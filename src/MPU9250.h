@@ -255,6 +255,14 @@ public:
     float accel_data[3];
     float temperature;
     float gyro_data[3];
+
+    float ax_data[32];
+    float ay_data[32];
+    float az_data[32];
+    float gx_data[32];
+    float gy_data[32];
+    float gz_data[32];
+
     float mag_data[3];
     int16_t mag_data_raw[3];
    // uint8_t accel_data[6];
