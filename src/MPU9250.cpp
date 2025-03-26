@@ -84,6 +84,15 @@ bool MPU9250::init(bool calib_gyro, bool calib_acc){
         {BITS_FS_2G, MPUREG_ACCEL_CONFIG},       // +-2G
         {my_low_pass_filter_acc, MPUREG_ACCEL_CONFIG_2}, // Set Acc Data Rates, Enable Acc LPF , Bandwidth 184Hz
         {0x12, MPUREG_INT_PIN_CFG},      //
+
+        // FIFO setup
+        {0x40|0x20, MPUREG_USER_CTRL}, // FIFO_EN + I2C_MST_EN
+        {0x04, MPUREG_USER_CTRL}, // Reset FIFO
+        {0xF9, MPUREG_FIFO_EN}, // Gyro + Acc + temp + SLV2 -> 16 bytes
+        {0x82, MPUREG_I2C_SLV0_CTRL}, // Enables SLV2, and configures reading 2 bytes
+        {0x41, MPUREG_CONFIG}, // Set low-pass filter to 188 Hz, FIFO_MODE =1
+
+        /* magnetometer shit
         //{0x40, MPUREG_I2C_MST_CTRL},   // I2C Speed 348 kHz
         //{0x20, MPUREG_USER_CTRL},      // Enable AUX
         {0x30, MPUREG_USER_CTRL},        // I2C Master mode and set I2C_IF_DIS to disable slave mode I2C bus
@@ -104,7 +113,8 @@ bool MPU9250::init(bool calib_gyro, bool calib_acc){
         {0x12, MPUREG_I2C_SLV0_DO},   // Register value to 8Hz continuous measurement in 16bit
 #endif
         {0x81, MPUREG_I2C_SLV0_CTRL}  //Enable I2C and set 1 byte
-        
+        */
+
     };
 
     for(i = 0; i < MPU_InitRegNum; i++) {
@@ -263,12 +273,18 @@ void MPU9250::init_fifo(){
     WriteReg(MPUREG_USER_CTRL, 0x04); // reset FIFO
    // WriteReg(MPUREG_CONFIG, 0x41);      // Set low-pass filter to 188 Hz, FIFO_MODE =1
     delay(10);
-    WriteReg(MPUREG_USER_CTRL, 0x40|0x20 ); // enable FIFO
     //WriteReg(MPUREG_USER_CTRL, user_ctrl | 0x40); // Doesn't erase previous bits
     WriteReg(MPUREG_FIFO_EN, 0xF9); // buffer gyro and acc data, temp data and SLV2 data
-
     WriteReg(MPUREG_I2C_SLV0_CTRL, 0x82); // Enables SLV0, and configures reading 2 bytes 
                                           // (only used to add extra bytes to buffer)
+    WriteReg(MPUREG_USER_CTRL, 0x40|0x20 ); // enable FIFO
+}
+
+void MPU9250::reset_fifo() {
+    WriteReg(MPUREG_USER_CTRL, 0x00); // Disable FIFO
+    WriteReg(MPUREG_USER_CTRL, 0x04); // reset FIFO
+    delay(10);
+    WriteReg(MPUREG_USER_CTRL, 0x40|0x20 ); // enable FIFO
 }
 
 // stores values in FIFO at correct sample rate
@@ -280,8 +296,17 @@ void MPU9250::read_fifo(){
     ReadRegs(MPUREG_FIFO_COUNTH, count_data, 2); // read FIFO sample count
     fifo_count = ((uint16_t)count_data[0] << 8) | count_data[1];
 
+    if (fifo_count % 16 != 0) {
+        //Serial.print("fifo reset: "); Serial.println(fifo_count);
+        reset_fifo();
+        delay(10);
+        fifo_count = ((uint16_t)count_data[0] << 8) | count_data[1];
+    }
+
     ReadRegs(MPUREG_FIFO_R_W, data_buffer, fifo_count); // burst read FIFO
-    bufferlength = fifo_count;
+
+    bufferlength = (fifo_count/16)*12; // 16->12
+    //Serial.print("fifo_count: "); Serial.println(fifo_count);
 
     for (int i =0 ; i<fifo_count/16; i++) {
         memcpy(&sliced_buffer[i*12], &data_buffer[i*16+2], 12);
