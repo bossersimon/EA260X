@@ -239,7 +239,6 @@ void MPU9250::read_acc()
         data = (float)bit_data;
         accel_data[i] = data/acc_divider - a_bias[i];
     }
-    
 }
 
 /*                                 READ GYROSCOPE
@@ -261,30 +260,6 @@ void MPU9250::read_gyro()
         data = (float)bit_data;
         gyro_data[i] = data/gyro_divider - g_bias[i];
     }
-
-}
-
-// ##########################################
-    // Enables storing data to FIFO instead of reading sequentially
-void MPU9250::init_fifo(){
-    uint8_t user_ctrl;
-    ReadReg(MPUREG_USER_CTRL, user_ctrl); // Read current settings
-    WriteReg(MPUREG_USER_CTRL, 0x00); // Disable FIFO
-    WriteReg(MPUREG_USER_CTRL, 0x04); // reset FIFO
-   // WriteReg(MPUREG_CONFIG, 0x41);      // Set low-pass filter to 188 Hz, FIFO_MODE =1
-    delay(10);
-    //WriteReg(MPUREG_USER_CTRL, user_ctrl | 0x40); // Doesn't erase previous bits
-    WriteReg(MPUREG_FIFO_EN, 0xF9); // buffer gyro and acc data, temp data and SLV2 data
-    WriteReg(MPUREG_I2C_SLV0_CTRL, 0x82); // Enables SLV0, and configures reading 2 bytes 
-                                          // (only used to add extra bytes to buffer)
-    WriteReg(MPUREG_USER_CTRL, 0x40|0x20 ); // enable FIFO
-}
-
-void MPU9250::reset_fifo() {
-    WriteReg(MPUREG_USER_CTRL, 0x00); // Disable FIFO
-    WriteReg(MPUREG_USER_CTRL, 0x04); // reset FIFO
-    delay(10);
-    WriteReg(MPUREG_USER_CTRL, 0x40|0x20 ); // enable FIFO
 }
 
 // stores values in FIFO at correct sample rate
@@ -292,9 +267,7 @@ void MPU9250::read_fifo(){
     uint16_t fifo_count;
     uint8_t count_data[2];
 
-    /* First check if data is available */
     ReadRegs(MPUREG_FIFO_COUNTH, count_data, 2); // read FIFO sample count
-    //fifo_count = ((uint16_t)(count_data[0]& 0x0F) <<8) | count_data[1];
     fifo_count = ((uint16_t)count_data[0] << 8) | count_data[1];
 
    // Serial.print("fifo count: "); Serial.println(fifo_count);
@@ -302,39 +275,6 @@ void MPU9250::read_fifo(){
     frameSize = fifo_count/12;
 
     ReadRegs(MPUREG_FIFO_R_W, data_buffer, fifo_count);
-
-    for (int i =0 ; i<fifo_count/12; i++) {
-        //memcpy(&sliced_buffer[i*12], &data_buffer[i*16+2], 12);
-        //ReadRegs(MPUREG_FIFO_R_W, _buffer, 12);
-
-        ax_Fifo[i] = (((int16_t)data_buffer[i*12]) << 8) | data_buffer[i*12+1];  
-        ay_Fifo[i] = (((int16_t)data_buffer[i*12+2]) << 8) | data_buffer[i*12+3];
-        az_Fifo[i] = (((int16_t)data_buffer[i*12+4]) << 8) | data_buffer[i*12+5];
-
-        gx_Fifo[i] = (((int16_t)data_buffer[i*12+6]) << 8) | data_buffer[i*12+7];
-        gy_Fifo[i] = (((int16_t)data_buffer[i*12+8]) << 8) | data_buffer[i*12+9];
-        gz_Fifo[i] = (((int16_t)data_buffer[i*12+10]) << 8) | data_buffer[i*12+11];
-    }
-
-/*
-    if (fifo_count % 16 != 0) {
-        Serial.print("fifo misaligned: "); Serial.println(fifo_count);
-        delay(10);
-    }
-*/
-    //ReadRegs(MPUREG_FIFO_R_W, data_buffer, fifo_count); // burst read FIFO
-
-    //bufferlength = (fifo_count/16)*12; // 16->12
-    //Serial.print("fifo_count: "); Serial.println(fifo_count); 
-
-    /*
-    while (fifo_count >= 14) {
-        ReadRegs(MPUREG_FIFO_R_W, fifo_data_14, 14); // read FIFO once
-        // Update count 
-        ReadRegs(MPUREG_FIFO_COUNTH, count_data, 2); // read FIFO sample count
-        fifo_count = ((uint16_t)count_data[0] << 8) | count_data[1] ;
-    }
-    */
 }
 
 

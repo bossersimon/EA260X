@@ -161,20 +161,27 @@ void testPrint() {
 void floatConversion() {
 
 // fifo data stored as [ax,ay,az,gx,gy,gz]? big-endian format
-	int16_t* ax = mpu.ax_Fifo;
-    int16_t* ay = mpu.ay_Fifo;
-    int16_t* az = mpu.az_Fifo;
-    int16_t* gx = mpu.gx_Fifo;
-    int16_t* gy = mpu.gy_Fifo;
-    int16_t* gz = mpu.gz_Fifo;
+	uint8_t* buffer = mpu.data_buffer;
+
+	int16_t ax_buf[42], ay_buf[42], az_buf[42], gx_buf[42], gy_buf[42], gz_buf[42];
+
+	for (int i =0 ; i<mpu.frameSize; i++) {
+		ax_buf[i] = (((int16_t)buffer[i*12]) << 8) | buffer[i*12+1];  
+		ay_buf[i] = (((int16_t)buffer[i*12+2]) << 8) | buffer[i*12+3];
+		az_buf[i] = (((int16_t)buffer[i*12+4]) << 8) | buffer[i*12+5];
+
+		gx_buf[i] = (((int16_t)buffer[i*12+6]) << 8) | buffer[i*12+7];
+		gy_buf[i] = (((int16_t)buffer[i*12+8]) << 8) | buffer[i*12+9];
+		gz_buf[i] = (((int16_t)buffer[i*12+10]) << 8) | buffer[i*12+11];
+	}
 
 	for(int n = 0; n < mpu.frameSize; n++) {
-		mpu.ax_data[n] = ((float)ax[n])/mpu.acc_divider - mpu.a_bias[0];
-		mpu.ay_data[n] = ((float)ay[n])/mpu.acc_divider - mpu.a_bias[1];
-		mpu.az_data[n] = ((float)az[n])/mpu.acc_divider - mpu.a_bias[2];
-		mpu.gx_data[n] = ((float)gx[n])/mpu.gyro_divider - mpu.g_bias[0];
-		mpu.gy_data[n] = ((float)gy[n])/mpu.gyro_divider - mpu.g_bias[1];
-		mpu.gz_data[n] = ((float)gz[n])/mpu.gyro_divider - mpu.g_bias[2];
+		mpu.ax_data[n] = ((float)ax_buf[n])/mpu.acc_divider - mpu.a_bias[0];
+		mpu.ay_data[n] = ((float)ay_buf[n])/mpu.acc_divider - mpu.a_bias[1];
+		mpu.az_data[n] = ((float)az_buf[n])/mpu.acc_divider - mpu.a_bias[2];
+		mpu.gx_data[n] = ((float)gx_buf[n])/mpu.gyro_divider - mpu.g_bias[0];
+		mpu.gy_data[n] = ((float)gy_buf[n])/mpu.gyro_divider - mpu.g_bias[1];
+		mpu.gz_data[n] = ((float)gz_buf[n])/mpu.gyro_divider - mpu.g_bias[2];
 	}
 
 
