@@ -53,7 +53,7 @@ void MPU9250::ReadRegs( uint8_t ReadAddr, uint8_t *ReadBuf, unsigned int Bytes )
  * returns 1 if an error occurred
  */
 
-#define MPU_InitRegNum 17
+#define MPU_InitRegNum 14
 
 bool MPU9250::init(bool calib_gyro, bool calib_acc){
     pinMode(my_cs, OUTPUT);
@@ -85,26 +85,16 @@ bool MPU9250::init(bool calib_gyro, bool calib_acc){
         {my_low_pass_filter_acc, MPUREG_ACCEL_CONFIG_2}, // Set Acc Data Rates, Enable Acc LPF , Bandwidth 184Hz
         {0x12, MPUREG_INT_PIN_CFG},      //
 
-        // FIFO setup
-        {0x40|0x20, MPUREG_USER_CTRL}, // FIFO_EN + I2C_MST_EN
-        {0x04, MPUREG_USER_CTRL}, // Reset FIFO
-        {0xF9, MPUREG_FIFO_EN}, // Gyro + Acc + temp + SLV2 -> 16 bytes
-        {0x82, MPUREG_I2C_SLV0_CTRL}, // Enables SLV2, and configures reading 2 bytes
-        {0x41, MPUREG_CONFIG}, // Set low-pass filter to 188 Hz, FIFO_MODE =1
-
-        /* magnetometer shit
-        //{0x40, MPUREG_I2C_MST_CTRL},   // I2C Speed 348 kHz
-        //{0x20, MPUREG_USER_CTRL},      // Enable AUX
+        // Magnetometer
+        /*
         {0x30, MPUREG_USER_CTRL},        // I2C Master mode and set I2C_IF_DIS to disable slave mode I2C bus
         {0x0D, MPUREG_I2C_MST_CTRL},     // I2C configuration multi-master  IIC 400KHz
         
         {AK8963_I2C_ADDR, MPUREG_I2C_SLV0_ADDR},  // Set the I2C slave addres of AK8963 and set for write.
-        //{0x09, MPUREG_I2C_SLV4_CTRL},
-        //{0x81, MPUREG_I2C_MST_DELAY_CTRL}, // Enable I2C delay
 
         {AK8963_CNTL2, MPUREG_I2C_SLV0_REG}, // I2C slave 0 register address from where to begin data transfer
         {0x01, MPUREG_I2C_SLV0_DO},   // Reset AK8963
-        {0x81, MPUREG_I2C_SLV0_CTRL}, // Enable I2C and set 1 byte
+        {0x82, MPUREG_I2C_SLV0_CTRL}, // Enable I2C and set 2 bytes
 
         {AK8963_CNTL1, MPUREG_I2C_SLV0_REG}, // I2C slave 0 register address from where to begin data transfer
 #ifdef AK8963FASTMODE
@@ -112,9 +102,19 @@ bool MPU9250::init(bool calib_gyro, bool calib_acc){
 #else
         {0x12, MPUREG_I2C_SLV0_DO},   // Register value to 8Hz continuous measurement in 16bit
 #endif
-        {0x81, MPUREG_I2C_SLV0_CTRL}  //Enable I2C and set 1 byte
+        {0x82, MPUREG_I2C_SLV0_CTRL},  //Enable I2C and set 2 bytes
         */
 
+        // Interrupt settings
+        {0x10, MPUREG_INT_ENABLE}, // FIFO_OVERFLOW_EN
+        {0x10, MPUREG_INT_PIN_CFG}, // INT_ANYRD_2CLEAR
+                                    // INT pin is active high, push-pull
+
+        // FIFO settings
+        {0x00, MPUREG_USER_CTRL}, // FIFO disable
+        {0x04, MPUREG_USER_CTRL}, // Reset FIFO
+        {0x40, MPUREG_USER_CTRL}, // FIFO_EN
+        {0x78, MPUREG_FIFO_EN}, // Gyro + Acc
     };
 
     for(i = 0; i < MPU_InitRegNum; i++) {
@@ -125,7 +125,7 @@ bool MPU9250::init(bool calib_gyro, bool calib_acc){
     set_acc_scale(BITS_FS_2G);
     set_gyro_scale(BITS_FS_250DPS);
     
-    calib_mag();  // If experiencing problems here, just comment it out. Should still be somewhat functional.
+   // calib_mag();  // If experiencing problems here, just comment it out. Should still be somewhat functional.
     return 0;
 }
 
@@ -294,23 +294,38 @@ void MPU9250::read_fifo(){
 
     /* First check if data is available */
     ReadRegs(MPUREG_FIFO_COUNTH, count_data, 2); // read FIFO sample count
+    //fifo_count = ((uint16_t)(count_data[0]& 0x0F) <<8) | count_data[1];
     fifo_count = ((uint16_t)count_data[0] << 8) | count_data[1];
 
+   // Serial.print("fifo count: "); Serial.println(fifo_count);
+
+    frameSize = fifo_count/12;
+
+    ReadRegs(MPUREG_FIFO_R_W, data_buffer, fifo_count);
+
+    for (int i =0 ; i<fifo_count/12; i++) {
+        //memcpy(&sliced_buffer[i*12], &data_buffer[i*16+2], 12);
+        //ReadRegs(MPUREG_FIFO_R_W, _buffer, 12);
+
+        ax_Fifo[i] = (((int16_t)data_buffer[i*12]) << 8) | data_buffer[i*12+1];  
+        ay_Fifo[i] = (((int16_t)data_buffer[i*12+2]) << 8) | data_buffer[i*12+3];
+        az_Fifo[i] = (((int16_t)data_buffer[i*12+4]) << 8) | data_buffer[i*12+5];
+
+        gx_Fifo[i] = (((int16_t)data_buffer[i*12+6]) << 8) | data_buffer[i*12+7];
+        gy_Fifo[i] = (((int16_t)data_buffer[i*12+8]) << 8) | data_buffer[i*12+9];
+        gz_Fifo[i] = (((int16_t)data_buffer[i*12+10]) << 8) | data_buffer[i*12+11];
+    }
+
+/*
     if (fifo_count % 16 != 0) {
-        //Serial.print("fifo reset: "); Serial.println(fifo_count);
-        reset_fifo();
+        Serial.print("fifo misaligned: "); Serial.println(fifo_count);
         delay(10);
-        fifo_count = ((uint16_t)count_data[0] << 8) | count_data[1];
     }
+*/
+    //ReadRegs(MPUREG_FIFO_R_W, data_buffer, fifo_count); // burst read FIFO
 
-    ReadRegs(MPUREG_FIFO_R_W, data_buffer, fifo_count); // burst read FIFO
-
-    bufferlength = (fifo_count/16)*12; // 16->12
-    //Serial.print("fifo_count: "); Serial.println(fifo_count);
-
-    for (int i =0 ; i<fifo_count/16; i++) {
-        memcpy(&sliced_buffer[i*12], &data_buffer[i*16+2], 12);
-    }
+    //bufferlength = (fifo_count/16)*12; // 16->12
+    //Serial.print("fifo_count: "); Serial.println(fifo_count); 
 
     /*
     while (fifo_count >= 14) {
@@ -321,9 +336,6 @@ void MPU9250::read_fifo(){
     }
     */
 }
-
-// #####################################################
-
 
 
 /*                                 READ temperature
