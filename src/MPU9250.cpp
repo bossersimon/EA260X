@@ -264,16 +264,12 @@ void MPU9250::read_gyro()
 
 // stores values in FIFO at correct sample rate
 void MPU9250::read_fifo(){
-    uint16_t fifo_count;
-    uint8_t count_data[2];
 
-    ReadRegs(MPUREG_FIFO_COUNTH, count_data, 2); // read FIFO sample count
-    fifo_count = ((uint16_t)count_data[0] << 8) | count_data[1];
+    ReadRegs(MPUREG_FIFO_COUNTH, data_buffer, 2); // read FIFO sample count
+    fifo_count = ((uint16_t)data_buffer[0] << 8) | data_buffer[1];
 
    // Serial.print("fifo count: "); Serial.println(fifo_count);
-
     frameSize = fifo_count/12;
-
     ReadRegs(MPUREG_FIFO_R_W, data_buffer, fifo_count);
 }
 

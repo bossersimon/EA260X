@@ -239,8 +239,8 @@ public:
     // ######## added
     void read_fifo();
     uint8_t data_buffer[512];
-    uint8_t sliced_buffer[384];
     uint16_t frameSize;
+    uint16_t fifo_count;
 
     // data buffers
     uint8_t _buffer[12];
