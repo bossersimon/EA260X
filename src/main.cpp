@@ -16,8 +16,6 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 
-#include <ESP32Servo.h>
-
 #define SERVICE_UUID        "9fc7cd06-b6aa-492d-9991-4d5a433023e5"
 #define CHARACTERISTIC_UUID "c1756f0e-07c7-49aa-bd64-8494be4f1a1c"
 #define PARAMS_CHARACTERISTIC_UUID "97b28d55-f227-4568-885a-4db649a8e9fd"
@@ -40,7 +38,6 @@ MPU9250 mpu(SPI_CLOCK, SS_PIN);
 BLECharacteristic *pCharacteristic;
 BLECharacteristic *pParamsCharacteristic;
 
-
 void testPrint();
 void floatConversion();
 void serialPlot();
@@ -51,23 +48,6 @@ void plotBuffer();
 
 void setup() {
 	Serial.begin(115200);
-	SPI.begin();
-	delay(100);
-
-	mpu.init(true, true);
-
-	uint8_t wai = mpu.whoami(); // doesn't work? 
-	if (wai == 0x71){
-		Serial.println("Successful connection");
-	}
-	else{
-		Serial.print("Failed connection: ");
-		Serial.println(wai, HEX);
-	}
-
-	mpu.calib_acc();
-	delay(100);
-	mpu.init_fifo(); // Enables buffering to FIFO
 	
 	BLEDevice::init("MyESP32");
   	BLEServer *pServer = BLEDevice::createServer();
@@ -114,8 +94,22 @@ void setup() {
 	Serial.print("Gyro_scale: "); Serial.println(gyro_scale);
 	*/
 
-	mpu.set_acc_scale(BITS_FS_2G);
-	mpu.set_gyro_scale(BITS_FS_250DPS);
+	SPI.begin();
+	delay(100);
+
+	mpu.init(true, true);
+
+	uint8_t wai = mpu.whoami(); // doesn't work? 
+	if (wai == 0x71){
+		Serial.println("Successful connection");
+	}
+	else{
+		Serial.print("Failed connection: ");
+		Serial.println(wai, HEX);
+	}
+
+	mpu.calib_acc();
+	delay(100);
 
 	// transmit the bias and scale parameters (have to be converted to floats later)
 	uint8_t params[12];
@@ -126,7 +120,6 @@ void setup() {
 	// For testing, expects FIFO setting
 	// testPrint();
 
-	delay(1000);
 }
 
 void loop() {
@@ -135,15 +128,16 @@ void loop() {
 	//memcpy(mpu.fifo_data_12, &mpu.fifo_data_14[2], 12);
 
 	//pCharacteristic->setValue((uint8_t*)mpu.fifo_data_12, sizeof(mpu.fifo_data_12));
-	pCharacteristic->setValue((uint8_t*)mpu.sliced_buffer, mpu.bufferlength);
+	//if (pCharacteristic->canNotify())
+	//pCharacteristic->setValue((uint8_t*)mpu.sliced_buffer, mpu.frameSize);
 	
-  	pCharacteristic->notify();  // Send notification to connected device
+  	//pCharacteristic->notify();  // Send notification to connected device
 	
 	// for testing
  	floatConversion();
 	//serialPlot();
 	plotBuffer();
-	delay(30);
+	delay(10);
 }
 
 /* Prints one reading to be transmitted (for testing) */
@@ -167,10 +161,22 @@ void testPrint() {
 void floatConversion() {
 
 // fifo data stored as [ax,ay,az,gx,gy,gz]? big-endian format
+	int16_t* ax = mpu.ax_Fifo;
+    int16_t* ay = mpu.ay_Fifo;
+    int16_t* az = mpu.az_Fifo;
+    int16_t* gx = mpu.gx_Fifo;
+    int16_t* gy = mpu.gy_Fifo;
+    int16_t* gz = mpu.gz_Fifo;
 
-	int16_t bit_data;
-	float data;
-	// For some reason the FIFO measurements are not aligned. The data is instead read as [az,gx,gy,gz,ax,ay]
+	for(int n = 0; n < mpu.frameSize; n++) {
+		mpu.ax_data[n] = ((float)ax[n])/mpu.acc_divider - mpu.a_bias[0];
+		mpu.ay_data[n] = ((float)ay[n])/mpu.acc_divider - mpu.a_bias[1];
+		mpu.az_data[n] = ((float)az[n])/mpu.acc_divider - mpu.a_bias[2];
+		mpu.gx_data[n] = ((float)gx[n])/mpu.gyro_divider - mpu.g_bias[0];
+		mpu.gy_data[n] = ((float)gy[n])/mpu.gyro_divider - mpu.g_bias[1];
+		mpu.gz_data[n] = ((float)gz[n])/mpu.gyro_divider - mpu.g_bias[2];
+	}
+
 
 	/*
 	for(int i = 0; i < 3; i++) {
@@ -181,36 +187,33 @@ void floatConversion() {
 		bit_data = ((int16_t)mpu.fifo_data_12[6+i*2]<<8) | mpu.fifo_data_12[6+i*2+1];
 		data = (float)bit_data;
 		mpu.accel_data[i] = data/mpu.acc_divider - mpu.a_bias[i];
-	}
+	}	
 	*/
+/*
 	int nSamples = mpu.bufferlength/12;
 
-	for(int n = 0; n <= nSamples; n++) {
-		bit_data= ((int16_t)mpu.sliced_buffer[n]<<8) | mpu.sliced_buffer[n+1];
-		data = (float)bit_data;
-		mpu.ax_data[n] = data/mpu.acc_divider - mpu.a_bias[0];
+	for(int n = 0; n < nSamples; n++) {
+		uint8_t* buffer = &mpu.sliced_buffer[n * 12];
 
-		bit_data= ((int16_t)mpu.sliced_buffer[n]<<8) | mpu.sliced_buffer[n+1];
-		data = (float)bit_data;
-		mpu.ay_data[n] = data/mpu.acc_divider - mpu.a_bias[1];
+		bit_data= ((int16_t)buffer[0]<<8) | buffer[1];
+		mpu.ax_data[n] = ((float)bit_data) / mpu.acc_divider - mpu.a_bias[0];
 
-		bit_data= ((int16_t)mpu.sliced_buffer[n]<<8) | mpu.sliced_buffer[n+1];
-		data = (float)bit_data;
-		mpu.az_data[n] = data/mpu.acc_divider - mpu.a_bias[2];
+		bit_data= ((int16_t)buffer[2]<<8) | buffer[3];
+		mpu.ay_data[n] = ((float)bit_data)/mpu.acc_divider - mpu.a_bias[1];
 
-		bit_data= ((int16_t)mpu.sliced_buffer[n]<<8) | mpu.sliced_buffer[n+1];
-		data = (float)bit_data;
-		mpu.gx_data[n] = data/mpu.gyro_divider - mpu.g_bias[0];
+		bit_data= ((int16_t)buffer[4]<<8) | buffer[5];
+		mpu.az_data[n] = ((float)bit_data)/mpu.acc_divider - mpu.a_bias[2];
 
-		bit_data= ((int16_t)mpu.sliced_buffer[n]<<8) | mpu.sliced_buffer[n+1];
-		data = (float)bit_data;
-		mpu.gy_data[n] = data/mpu.gyro_divider - mpu.g_bias[1];
+		bit_data= ((int16_t)buffer[6]<<8) | buffer[7];
+		mpu.gx_data[n] = ((float)bit_data)/mpu.gyro_divider - mpu.g_bias[0];
 
-		bit_data= ((int16_t)mpu.sliced_buffer[n]<<8) | mpu.sliced_buffer[n+1];
-		data = (float)bit_data;
-		mpu.gz_data[n] = data/mpu.gyro_divider - mpu.g_bias[2];
+		bit_data= ((int16_t)buffer[8]<<8) | buffer[9];
+		mpu.gy_data[n] = ((float)bit_data)/mpu.gyro_divider - mpu.g_bias[1];
 
-	}	
+		bit_data= ((int16_t)buffer[10]<<8) | buffer[11];
+		mpu.gz_data[n] = ((float)bit_data)/mpu.gyro_divider - mpu.g_bias[2];
+	}
+		*/
 }
 
 
@@ -232,20 +235,25 @@ void serialPlot() {
 }
 
 void plotBuffer() {
-	for(int i = 0; i<mpu.bufferlength/12; i++) {
-		Serial.print(">accx:");
-		Serial.println(mpu.ax_data[i]);
-		Serial.print(">accy:");
-		Serial.println(mpu.ay_data[i]);
-		Serial.print(">accz:");
-		Serial.println(mpu.az_data[i]);
-	
-		Serial.print(">gyrox:");
-		Serial.println(mpu.gx_data[i]);
-		Serial.print(">gyroy:");
-		Serial.println(mpu.gy_data[i]);
-		Serial.print(">gyroz:");
-		Serial.println(mpu.gz_data[i]);	}
+	for(int i = 0; i<mpu.frameSize; i++) {
+
+		// Print every 2nd sample
+		if (i % 10 == 0) {
+			Serial.print(">accx:");
+			Serial.println(mpu.ax_data[i]);
+			Serial.print(">accy:");
+			Serial.println(mpu.ay_data[i]);
+			Serial.print(">accz:");
+			Serial.println(mpu.az_data[i]);
+		
+			Serial.print(">gyrox:");
+			Serial.println(mpu.gx_data[i]);
+			Serial.print(">gyroy:");
+			Serial.println(mpu.gy_data[i]);
+			Serial.print(">gyroz:");
+			Serial.println(mpu.gz_data[i]);
+		}
+	}
 }
 
 void printAdjustments() {
