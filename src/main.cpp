@@ -125,19 +125,15 @@ void setup() {
 void loop() {
 
 	mpu.read_fifo(); // updates fifo_data
-	//memcpy(mpu.fifo_data_12, &mpu.fifo_data_14[2], 12);
 
-	//pCharacteristic->setValue((uint8_t*)mpu.fifo_data_12, sizeof(mpu.fifo_data_12));
-	//if (pCharacteristic->canNotify())
-	//pCharacteristic->setValue((uint8_t*)mpu.sliced_buffer, mpu.frameSize);
-	
-  	//pCharacteristic->notify();  // Send notification to connected device
+	pCharacteristic->setValue((uint8_t*)mpu.data_buffer, mpu.fifo_count);	
+  	pCharacteristic->notify();  // Send notification to connected device
 	
 	// for testing
- 	floatConversion();
+ 	//floatConversion();
 	//serialPlot();
-	plotBuffer();
-	delay(10);
+	//plotBuffer();
+	delay(60);
 }
 
 /* Prints one reading to be transmitted (for testing) */
@@ -244,7 +240,7 @@ void serialPlot() {
 void plotBuffer() {
 	for(int i = 0; i<mpu.frameSize; i++) {
 
-		// Print every 2nd sample
+		// Print every 10th sample
 		if (i % 10 == 0) {
 			Serial.print(">accx:");
 			Serial.println(mpu.ax_data[i]);
