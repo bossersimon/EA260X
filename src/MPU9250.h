@@ -237,11 +237,7 @@ public:
     void calibrate(float *dest1, float *dest2);
  
     // ######## added
-    void init_fifo();
     void read_fifo();
-    void reset_fifo();
-  //  uint8_t fifo_data_14[14];
-  //  uint8_t fifo_data_12[12];
     uint8_t data_buffer[512];
     uint8_t sliced_buffer[384];
     uint16_t frameSize;
