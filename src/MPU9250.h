@@ -239,11 +239,23 @@ public:
     // ######## added
     void init_fifo();
     void read_fifo();
-    uint8_t fifo_data_14[14];
-    uint8_t fifo_data_12[12];
+    void reset_fifo();
+  //  uint8_t fifo_data_14[14];
+  //  uint8_t fifo_data_12[12];
     uint8_t data_buffer[512];
     uint8_t sliced_buffer[384];
-    uint16_t bufferlength;
+    uint16_t frameSize;
+
+    // data buffers
+    uint8_t _buffer[12];
+
+    int16_t ax_Fifo[85];
+    int16_t ay_Fifo[85];
+    int16_t az_Fifo[85];
+    int16_t gx_Fifo[85];
+    int16_t gy_Fifo[85];
+    int16_t gz_Fifo[85];
+
     // ##############
 
     float acc_divider;
@@ -256,12 +268,13 @@ public:
     float temperature;
     float gyro_data[3];
 
-    float ax_data[32];
-    float ay_data[32];
-    float az_data[32];
-    float gx_data[32];
-    float gy_data[32];
-    float gz_data[32];
+    // floats for printing in Serial
+    float ax_data[85];
+    float ay_data[85];
+    float az_data[85];
+    float gx_data[85];
+    float gy_data[85];
+    float gz_data[85];
 
     float mag_data[3];
     int16_t mag_data_raw[3];
