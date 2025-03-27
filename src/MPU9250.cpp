@@ -79,11 +79,18 @@ bool MPU9250::init(bool calib_gyro, bool calib_acc){
         {BIT_H_RESET, MPUREG_PWR_MGMT_1},        // Reset Device
         {0x01, MPUREG_PWR_MGMT_1},               // Clock Source
         {0x00, MPUREG_PWR_MGMT_2},               // Enable Acc & Gyro
-        {my_low_pass_filter, MPUREG_CONFIG},     // Use DLPF set Gyroscope bandwidth 184Hz, temperature bandwidth 188Hz
-        {BITS_FS_250DPS, MPUREG_GYRO_CONFIG},    // +-250dps
-        {BITS_FS_2G, MPUREG_ACCEL_CONFIG},       // +-2G
-        {my_low_pass_filter_acc, MPUREG_ACCEL_CONFIG_2}, // Set Acc Data Rates, Enable Acc LPF , Bandwidth 184Hz
-        {0x12, MPUREG_INT_PIN_CFG},      //
+
+        //{my_low_pass_filter, MPUREG_CONFIG},     // Use DLPF set Gyroscope bandwidth 184Hz, temperature bandwidth 188Hz
+        {BITS_DLPF_CFG_188HZ, MPUREG_CONFIG},  // DLPF_CFG = 0x01
+        
+        {0x09, MPUREG_SMPLRT_DIV},  // 100 Hz sample rate
+        {BITS_FS_250DPS, MPUREG_GYRO_CONFIG},  // +-250dps, FCHOICE_b = 0x00 (inverted) = 0x02 -> 184Hz BW
+        {BITS_FS_2G, MPUREG_ACCEL_CONFIG},     // +-2G, ACCEL_FS_SEL[1:0] = 0x00 -> +-2g
+
+       // {my_low_pass_filter_acc, MPUREG_ACCEL_CONFIG_2}, // Set Acc Data Rates, Enable Acc LPF , Bandwidth 184Hz
+        {BITS_DLPF_CFG_188HZ, MPUREG_ACCEL_CONFIG_2}, // A_DLPFCFG = 0x01 -> 3dB BW = 218.1 Hz
+
+        {0x12, MPUREG_INT_PIN_CFG},      // INT_ANYRD_2CLEAR + BYPASS_EN
 
         // Magnetometer
         /*
@@ -107,7 +114,7 @@ bool MPU9250::init(bool calib_gyro, bool calib_acc){
 
         // Interrupt settings
         {0x10, MPUREG_INT_ENABLE}, // FIFO_OVERFLOW_EN
-        {0x10, MPUREG_INT_PIN_CFG}, // INT_ANYRD_2CLEAR
+       // {0x10, MPUREG_INT_PIN_CFG}, // INT_ANYRD_2CLEAR
                                     // INT pin is active high, push-pull
 
         // FIFO settings
