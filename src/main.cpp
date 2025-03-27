@@ -108,8 +108,8 @@ void setup() {
 		Serial.println(wai, HEX);
 	}
 
-	mpu.calib_acc();
-	delay(100);
+	//mpu.calib_acc();
+	//delay(100);
 
 	// transmit the bias and scale parameters (have to be converted to floats later)
 	uint8_t params[12];
@@ -133,7 +133,7 @@ void loop() {
  	//floatConversion();
 	//serialPlot();
 	//plotBuffer();
-	delay(60);
+	delay(50);
 }
 
 /* Prints one reading to be transmitted (for testing) */
