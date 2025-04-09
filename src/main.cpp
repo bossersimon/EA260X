@@ -116,7 +116,7 @@ void setup() {
 	getAdjustments(params);
 	pParamsCharacteristic->setValue(params, sizeof(params));
 	
-	//printAdjustments();
+	printAdjustments();
 	// For testing, expects FIFO setting
 	// testPrint();
 
@@ -129,7 +129,8 @@ void loop() {
 	pCharacteristic->setValue((uint8_t*)mpu.data_buffer, mpu.fifo_count);	
   	pCharacteristic->notify();  // Send notification to connected device
 	
-	// for testing
+	// for testing, run floatConversion, then plotBuffer.
+	// read_all() with serialPlot also works
  	//floatConversion();
 	//serialPlot();
 	//plotBuffer();
@@ -179,44 +180,6 @@ void floatConversion() {
 		mpu.gy_data[n] = ((float)gy_buf[n])/mpu.gyro_divider - mpu.g_bias[1];
 		mpu.gz_data[n] = ((float)gz_buf[n])/mpu.gyro_divider - mpu.g_bias[2];
 	}
-
-
-	/*
-	for(int i = 0; i < 3; i++) {
-		bit_data = ((int16_t)mpu.fifo_data_12[i*2]<<8) | mpu.fifo_data_12[i*2+1];
-		data = (float)bit_data;
-		mpu.gyro_data[i] = data/mpu.gyro_divider - mpu.g_bias[i];
-
-		bit_data = ((int16_t)mpu.fifo_data_12[6+i*2]<<8) | mpu.fifo_data_12[6+i*2+1];
-		data = (float)bit_data;
-		mpu.accel_data[i] = data/mpu.acc_divider - mpu.a_bias[i];
-	}	
-	*/
-/*
-	int nSamples = mpu.bufferlength/12;
-
-	for(int n = 0; n < nSamples; n++) {
-		uint8_t* buffer = &mpu.sliced_buffer[n * 12];
-
-		bit_data= ((int16_t)buffer[0]<<8) | buffer[1];
-		mpu.ax_data[n] = ((float)bit_data) / mpu.acc_divider - mpu.a_bias[0];
-
-		bit_data= ((int16_t)buffer[2]<<8) | buffer[3];
-		mpu.ay_data[n] = ((float)bit_data)/mpu.acc_divider - mpu.a_bias[1];
-
-		bit_data= ((int16_t)buffer[4]<<8) | buffer[5];
-		mpu.az_data[n] = ((float)bit_data)/mpu.acc_divider - mpu.a_bias[2];
-
-		bit_data= ((int16_t)buffer[6]<<8) | buffer[7];
-		mpu.gx_data[n] = ((float)bit_data)/mpu.gyro_divider - mpu.g_bias[0];
-
-		bit_data= ((int16_t)buffer[8]<<8) | buffer[9];
-		mpu.gy_data[n] = ((float)bit_data)/mpu.gyro_divider - mpu.g_bias[1];
-
-		bit_data= ((int16_t)buffer[10]<<8) | buffer[11];
-		mpu.gz_data[n] = ((float)bit_data)/mpu.gyro_divider - mpu.g_bias[2];
-	}
-		*/
 }
 
 
@@ -278,11 +241,7 @@ void getAdjustments(uint8_t* empty_arr) {
 	int16_t gy_bias = (int16_t)(mpu.g_bias[1]*100);
 	int16_t gz_bias = (int16_t)(mpu.g_bias[2]*100);
 
-	//int16_t gyro_div = (int16_t)(mpu.gyro_divider*100);
-	//int16_t acc_div = mpu.acc_divider*100;
-
-	int16_t parameters[6] = {gx_bias, gy_bias, gz_bias, ax_bias, ay_bias, az_bias};
-	//int16_t parameters[6] = {ax_bias, ay_bias, az_bias, gx_bias, gy_bias, gz_bias};
+	int16_t parameters[6] = {ax_bias, ay_bias, az_bias, gx_bias, gy_bias, gz_bias};
 
 	memcpy(empty_arr, parameters, sizeof(parameters)); // little-endian
 }
