@@ -37,6 +37,7 @@
 MPU9250 mpu(SPI_CLOCK, SS_PIN);
 BLECharacteristic *pCharacteristic;
 BLECharacteristic *pParamsCharacteristic;
+bool deviceConnected = false;
 
 void testPrint();
 void floatConversion();
@@ -46,14 +47,27 @@ void printAdjustments();
 void getAdjustments(uint8_t* arr);
 void plotBuffer();
 
+class MyServerCallbacks: public BLEServerCallbacks {
+	void onConnect(BLEServer* pServer) {
+		deviceConnected = true;
+	};
+
+	void onDisconnect(BLEServer* pServer) {
+		deviceConnected = false;
+		BLEDevice::startAdvertising();
+	};
+};
+
+
 void setup() {
 	Serial.begin(115200);
 	
 	BLEDevice::init("MyESP32");
   	BLEServer *pServer = BLEDevice::createServer();
+	pServer->setCallbacks(new MyServerCallbacks());
   	
-	BLEService *pService = pServer->createService(SERVICE_UUID);
-	pCharacteristic = pService->createCharacteristic(
+	BLEService *pService = pServer->createService(SERVICE_UUID); // BLE Service
+	pCharacteristic = pService->createCharacteristic( 
     	CHARACTERISTIC_UUID,
     	BLECharacteristic::PROPERTY_NOTIFY
   	);
@@ -68,22 +82,23 @@ void setup() {
 	pCharacteristic->addDescriptor(new BLE2902());
 	pParamsCharacteristic->addDescriptor(new BLE2902());
 	
+	pService->start();
 	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
 	pAdvertising->setScanResponse(false);
 	pAdvertising->setMinPreferred(0x06); // 10ms
-	pAdvertising->setMinPreferred(0x12); // 20ms
+	pAdvertising->setMaxPreferred(0x12); // 20ms
 	//pAdvertising->setMinInterval(0x06);   // 10ms
 	//pAdvertising->setMaxInterval(0x12);   // 10ms
-	//BLEDevice::setMTU(517);
+	BLEDevice::setMTU(247);
 	BLEDevice::startAdvertising();
 
   	pCharacteristic->setValue("Blah");
-  	pService->start();
 
 	Serial.println("Characteristic defined!");
 
+
+
 	// get divider parameters from client
-	
 	/*
 	uint8_t* scales = pParamsCharacteristic->getData();
 	int acc_scale = scales[0];
@@ -98,6 +113,7 @@ void setup() {
 	delay(100);
 
 	mpu.init(true, true);
+	mpu.set_gyro_scale(0x18); // 2000DPS
 
 	uint8_t wai = mpu.whoami(); // doesn't work? 
 	if (wai == 0x71){
@@ -115,25 +131,27 @@ void setup() {
 	uint8_t params[12];
 	getAdjustments(params);
 	pParamsCharacteristic->setValue(params, sizeof(params));
+//	pParamsCharacteristic->notify(); 
 	
-	printAdjustments();
+	// printAdjustments();
 	// For testing, expects FIFO setting
 	// testPrint();
-
 }
 
 void loop() {
-
 	mpu.read_fifo(); // updates fifo_data
-
-	pCharacteristic->setValue((uint8_t*)mpu.data_buffer, mpu.fifo_count);	
-  	pCharacteristic->notify();  // Send notification to connected device
-	
+			
 	// for testing, run floatConversion, then plotBuffer.
 	// read_all() with serialPlot also works
- 	//floatConversion();
+	//floatConversion();
 	//serialPlot();
 	//plotBuffer();
+	
+	if (deviceConnected) {
+		pCharacteristic->setValue((uint8_t*)mpu.data_buffer, mpu.fifo_count);	
+		pCharacteristic->notify();  // Send notification to connected device
+	}
+
 	delay(50);
 }
 
@@ -157,7 +175,7 @@ void testPrint() {
 /*	 This is for converting coordinates to float values, for testing purposes */
 void floatConversion() {
 
-// fifo data stored as [ax,ay,az,gx,gy,gz]? big-endian format
+// fifo data stored in big-endian format
 	uint8_t* buffer = mpu.data_buffer;
 
 	int16_t ax_buf[42], ay_buf[42], az_buf[42], gx_buf[42], gy_buf[42], gz_buf[42];
@@ -244,4 +262,8 @@ void getAdjustments(uint8_t* empty_arr) {
 	int16_t parameters[6] = {ax_bias, ay_bias, az_bias, gx_bias, gy_bias, gz_bias};
 
 	memcpy(empty_arr, parameters, sizeof(parameters)); // little-endian
+}
+
+void ble_connect() {	
+
 }
