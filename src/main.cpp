@@ -112,8 +112,9 @@ void setup() {
 	SPI.begin();
 	delay(100);
 
-	mpu.init(true, true);
+	mpu.init(false, false); // no calibration
 	mpu.set_gyro_scale(0x18); // 2000DPS
+	mpu.set_acc_scale(BITS_FS_16G);
 
 	uint8_t wai = mpu.whoami(); // doesn't work? 
 	if (wai == 0x71){
@@ -128,9 +129,9 @@ void setup() {
 	//delay(100);
 
 	// transmit the bias and scale parameters (have to be converted to floats later)
-	uint8_t params[12];
-	getAdjustments(params);
-	pParamsCharacteristic->setValue(params, sizeof(params));
+	//uint8_t params[12];
+	//getAdjustments(params);
+	//pParamsCharacteristic->setValue(params, sizeof(params));
 //	pParamsCharacteristic->notify(); 
 	
 	// printAdjustments();

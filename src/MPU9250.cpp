@@ -84,6 +84,7 @@ bool MPU9250::init(bool calib_gyro, bool calib_acc){
         {BITS_DLPF_CFG_188HZ, MPUREG_CONFIG},  // DLPF_CFG = 0x01
         
         {0x09, MPUREG_SMPLRT_DIV},  // 100 Hz sample rate
+        //{0x00, MPUREG_SMPLRT_DIV},  // 1000 Hz sample rate
         {BITS_FS_250DPS, MPUREG_GYRO_CONFIG},  // +-250dps, FCHOICE_b = 0x00 (inverted) = 0x02 -> 184Hz BW
         {BITS_FS_2G, MPUREG_ACCEL_CONFIG},     // +-2G, ACCEL_FS_SEL[1:0] = 0x00 -> +-2g
 
