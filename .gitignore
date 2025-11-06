@@ -9,3 +9,6 @@ recording_20250626_142312.csv
 spectrogramm2.asv
 wtf.m
 
+recordings/SML/*.bag
+recordings/SML/bags/*.bag
+recordings/SML/*.zip
