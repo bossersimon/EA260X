@@ -19,3 +19,7 @@ recordings/SML/*.zip
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+.direnv/
+.envrc
+python_scripts/__pycache__/
+recordings/random/
